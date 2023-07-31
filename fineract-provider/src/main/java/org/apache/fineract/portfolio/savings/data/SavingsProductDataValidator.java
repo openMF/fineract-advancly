@@ -102,20 +102,15 @@ public class SavingsProductDataValidator {
             SavingProductAccountingParams.SAVINGS_CONTROL.getValue(), SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue(),
             SavingProductAccountingParams.SAVINGS_REFERENCE.getValue(), SavingProductAccountingParams.FEE_INCOME_ACCOUNT_MAPPING.getValue(),
             SavingProductAccountingParams.PENALTY_INCOME_ACCOUNT_MAPPING.getValue(),
-            SavingProductAccountingParams.OVERDRAFT_PORTFOLIO_CONTROL.getValue(),
-            SavingProductAccountingParams.LOSSES_WRITTEN_OFF.getValue(), SavingProductAccountingParams.INCOME_FROM_INTEREST.getValue(),
-            SavingProductAccountingParams.ESCHEAT_LIABILITY.getValue(), isDormancyTrackingActiveParamName, daysToDormancyParamName,
-            daysToInactiveParamName, daysToEscheatParamName, allowOverdraftParamName, overdraftLimitParamName,
-            nominalAnnualInterestRateOverdraftParamName, minOverdraftForInterestCalculationParamName,
-            SavingsApiConstants.minRequiredBalanceParamName, SavingsApiConstants.enforceMinRequiredBalanceParamName,
-            SavingsApiConstants.maxAllowedLienLimitParamName, SavingsApiConstants.lienAllowedParamName,
-            minBalanceForInterestCalculationParamName, withHoldTaxParamName, taxGroupIdParamName,
-            SavingsApiConstants.accrualChargesParamName));
-
-    @Autowired
-    public SavingsProductDataValidator(final FromJsonHelper fromApiJsonHelper) {
-        this.fromApiJsonHelper = fromApiJsonHelper;
-    }
+            SavingProductAccountingParams.INTEREST_PAYABLE.getValue(), SavingProductAccountingParams.OVERDRAFT_PORTFOLIO_CONTROL.getValue(),
+            SavingProductAccountingParams.FEES_RECEIVABLE.getValue(), SavingProductAccountingParams.LOSSES_WRITTEN_OFF.getValue(),
+            SavingProductAccountingParams.INCOME_FROM_INTEREST.getValue(), SavingProductAccountingParams.ESCHEAT_LIABILITY.getValue(),
+            isDormancyTrackingActiveParamName, daysToDormancyParamName, daysToInactiveParamName, daysToEscheatParamName,
+            allowOverdraftParamName, overdraftLimitParamName, nominalAnnualInterestRateOverdraftParamName,
+            minOverdraftForInterestCalculationParamName, SavingsApiConstants.minRequiredBalanceParamName,
+            SavingsApiConstants.enforceMinRequiredBalanceParamName, SavingsApiConstants.maxAllowedLienLimitParamName,
+            SavingsApiConstants.lienAllowedParamName, minBalanceForInterestCalculationParamName, withHoldTaxParamName,
+            taxGroupIdParamName));
 
     public void validateForCreate(final String json) {
 
