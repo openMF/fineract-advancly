@@ -232,6 +232,44 @@ public final class AccountingConstants {
     }
 
     /***
+     * Accounting placeholders for periodic accrual based accounting for savings products
+     ***/
+    public enum AccrualAccountsForSavings {
+
+        SAVINGS_REFERENCE(1), SAVINGS_CONTROL(2), INTEREST_ON_SAVINGS(3), INCOME_FROM_FEES(4), INCOME_FROM_PENALTIES(5), TRANSFERS_SUSPENSE(
+                10), OVERDRAFT_PORTFOLIO_CONTROL(11), INCOME_FROM_INTEREST(12), LOSSES_WRITTEN_OFF(
+                        13), ESCHEAT_LIABILITY(14), FEES_RECEIVABLE(15), PENALTIES_RECEIVABLE(16), INTEREST_PAYABLE(17);
+
+        private final Integer value;
+
+        AccrualAccountsForSavings(final Integer value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return name().toString().replaceAll("_", " ");
+        }
+
+        public Integer getValue() {
+            return this.value;
+        }
+
+        private static final Map<Integer, AccrualAccountsForSavings> intToEnumMap = new HashMap<>();
+
+        static {
+            for (final AccrualAccountsForSavings type : AccrualAccountsForSavings.values()) {
+                intToEnumMap.put(type.value, type);
+            }
+        }
+
+        public static AccrualAccountsForSavings fromInt(final int i) {
+            final AccrualAccountsForSavings type = intToEnumMap.get(Integer.valueOf(i));
+            return type;
+        }
+    }
+
+    /***
      * Enum of all accounting related input parameter names used while creating/updating a savings product
      ***/
     public enum SavingProductAccountingParams {
@@ -248,7 +286,10 @@ public final class AccountingConstants {
                                                                                 "overdraftPortfolioControlId"), INCOME_FROM_INTEREST(
                                                                                         "incomeFromInterestId"), LOSSES_WRITTEN_OFF(
                                                                                                 "writeOffAccountId"), ESCHEAT_LIABILITY(
-                                                                                                        "escheatLiabilityId");
+                                                                                                        "escheatLiabilityId"), FEES_RECEIVABLE(
+                                                                                                                "feeReceivableAccountId"), PENALTIES_RECEIVABLE(
+                                                                                                                        "penaltyReceivableAccountId"), INTEREST_PAYABLE(
+                                                                                                                                "interestPayableAccountId");
 
         private final String value;
 
@@ -274,8 +315,11 @@ public final class AccountingConstants {
                                 "transfersInSuspenseAccount"), PENALTY_INCOME_ACCOUNT_MAPPING("penaltyToIncomeAccountMappings"), CHARGE_ID(
                                         "charge"), INCOME_ACCOUNT_ID("incomeAccount"), OVERDRAFT_PORTFOLIO_CONTROL(
                                                 "overdraftPortfolioControl"), INCOME_FROM_INTEREST(
-                                                        "incomeFromInterest"), LOSSES_WRITTEN_OFF(
-                                                                "writeOffAccount"), ESCHEAT_LIABILITY("escheatLiabilityAccount");
+                                                        "incomeFromInterest"), LOSSES_WRITTEN_OFF("writeOffAccount"), ESCHEAT_LIABILITY(
+                                                                "escheatLiabilityAccount"), FEES_RECEIVABLE(
+                                                                        "feeReceivableAccount"), PENALTIES_RECEIVABLE(
+                                                                                "penaltyReceivableAccount"), INTEREST_PAYABLE(
+                                                                                        "interestPayableAccount");
 
         private final String value;
 
