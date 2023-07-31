@@ -128,10 +128,6 @@ public enum SavingsAccountTransactionType {
         return this != INVALID;
     }
 
-    public boolean isValid() {
-        return this != INVALID;
-    }
-
     public boolean isDeposit() {
         return this == DEPOSIT;
     }
