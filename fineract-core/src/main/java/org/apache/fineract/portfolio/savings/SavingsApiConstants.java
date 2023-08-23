@@ -156,6 +156,7 @@ public class SavingsApiConstants {
     // charges parameters
     public static final String chargeIdParamName = "chargeId";
     public static final String chargesParamName = "charges";
+    public static final String accrualChargesParamName = "accrualCharges";
     public static final String savingsAccountChargeIdParamName = "savingsAccountChargeId";
     public static final String chargeNameParamName = "name";
     public static final String penaltyParamName = "penalty";
