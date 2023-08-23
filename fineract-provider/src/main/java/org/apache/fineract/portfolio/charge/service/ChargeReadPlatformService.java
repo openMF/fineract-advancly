@@ -112,6 +112,8 @@ public interface ChargeReadPlatformService {
      */
     Collection<ChargeData> retrieveSavingsProductCharges(Long savingsProductId);
 
+    Collection<ChargeData> retrieveSavingsProductAccrualCharges(Long savingsProductId);
+
     /** Retrieve savings account charges **/
     Collection<ChargeData> retrieveSavingsAccountApplicableCharges(Long savingsId);
 
