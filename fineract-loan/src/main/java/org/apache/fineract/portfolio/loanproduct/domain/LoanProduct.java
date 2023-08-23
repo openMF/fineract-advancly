@@ -90,6 +90,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "loan_transaction_strategy_name")
     private String transactionProcessingStrategyName;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "loanProduct", orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules = new ArrayList<>();
+
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
@@ -210,9 +213,12 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "overdue_days_for_repayment_event")
     private Integer overDueDaysForRepaymentEvent;
 
+    @Column(name = "repayment_start_date_type_enum", nullable = false)
+    private RepaymentStartDateType repaymentStartDateType;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
-            final List<Rate> productRates) {
+            final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules) {
 
         final String name = command.stringValueOfParameterNamed("name");
         final String shortName = command.stringValueOfParameterNamed(LoanProductConstants.SHORT_NAME);
@@ -391,23 +397,27 @@ public class LoanProduct extends AbstractPersistableCustom {
         final boolean enableAutoRepaymentForDownPayment = command
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT);
 
-        return new LoanProduct(fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal, minPrincipal,
-                maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType,
-                annualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
-                repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, graceOnPrincipalPayment,
-                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
-                inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle, startDate, closeDate, externalId,
-                useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
-                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
-                interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment, holdGuarantorFunds,
-                loanProductGuaranteeDetails, principalThresholdForLastInstallment, accountMovesOutOfNPAOnlyOnArrearsCompletion,
-                canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes, isLinkedToFloatingInterestRates,
-                floatingRate, interestRateDifferential, minDifferentialLendingRate, maxDifferentialLendingRate,
-                defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
-                minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
-                isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
-                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, dueDaysForRepaymentEvent,
-                overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment);
+        final RepaymentStartDateType repaymentStartDateType = RepaymentStartDateType
+                .fromInt(command.integerValueOfParameterNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE));
+
+        return new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules, name, shortName, description,
+                currency, principal, minPrincipal, maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod,
+                interestFrequencyType, annualInterestRate, interestMethod, interestCalculationPeriodMethod,
+                allowPartialPeriodInterestCalcualtion, repaymentEvery, repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments,
+                maxNumberOfRepayments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
+                graceOnInterestCharged, amortizationMethod, inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle,
+                startDate, closeDate, externalId, useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount,
+                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType,
+                isInterestRecalculationEnabled, interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment,
+                holdGuarantorFunds, loanProductGuaranteeDetails, principalThresholdForLastInstallment,
+                accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes,
+                isLinkedToFloatingInterestRates, floatingRate, interestRateDifferential, minDifferentialLendingRate,
+                maxDifferentialLendingRate, defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed,
+                isVariableInstallmentsAllowed, minimumGapBetweenInstallments, maximumGapBetweenInstallments,
+                syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment,
+                disallowExpectedDisbursements, allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber,
+                dueDaysForRepaymentEvent, overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment,
+                enableAutoRepaymentForDownPayment, repaymentStartDateType);
 
     }
 
@@ -589,7 +599,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProductMinMaxConstraints = null;
     }
 
-    public LoanProduct(final Fund fund, final String transactionProcessingStrategyCode, final String name, final String shortName,
+    public LoanProduct(final Fund fund, final String transactionProcessingStrategyCode,
+            final List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules, final String name, final String shortName,
             final String description, final MonetaryCurrency currency, final BigDecimal defaultPrincipal,
             final BigDecimal defaultMinPrincipal, final BigDecimal defaultMaxPrincipal,
             final BigDecimal defaultNominalInterestRatePerPeriod, final BigDecimal defaultMinNominalInterestRatePerPeriod,
@@ -620,9 +631,17 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
             final Integer overAppliedNumber, final Integer dueDaysForRepaymentEvent, final Integer overDueDaysForRepaymentEvent,
             final boolean enableDownPayment, final BigDecimal disbursedAmountPercentageForDownPayment,
-            final boolean enableAutoRepaymentForDownPayment) {
+            final boolean enableAutoRepaymentForDownPayment, final RepaymentStartDateType repaymentStartDateType) {
         this.fund = fund;
         this.transactionProcessingStrategyCode = transactionProcessingStrategyCode;
+
+        this.loanProductPaymentAllocationRules = loanProductPaymentAllocationRules;
+        if (this.loanProductPaymentAllocationRules != null) {
+            for (LoanProductPaymentAllocationRule loanProductPaymentAllocationRule : this.loanProductPaymentAllocationRules) {
+                loanProductPaymentAllocationRule.setLoanProduct(this);
+            }
+        }
+
         this.name = name.trim();
         this.shortName = shortName.trim();
         if (StringUtils.isNotBlank(description)) {
@@ -706,11 +725,18 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         this.dueDaysForRepaymentEvent = dueDaysForRepaymentEvent;
         this.overDueDaysForRepaymentEvent = overDueDaysForRepaymentEvent;
+        this.repaymentStartDateType = repaymentStartDateType;
 
         validateLoanProductPreSave();
     }
 
     public void validateLoanProductPreSave() {
+        if (this.loanProductPaymentAllocationRules != null && loanProductPaymentAllocationRules.size() > 0
+                && !transactionProcessingStrategyCode.equals("advanced-payment-allocation-strategy")) {
+            throw new LoanProductGeneralRuleException(
+                    "payment_allocation.must.not.be.provided.when.allocation.strategy.is.not.advanced-payment-strategy",
+                    "In case '" + transactionProcessingStrategyCode + "' payment strategy, payment_allocation must not be provided");
+        }
 
         if (this.disallowExpectedDisbursements) {
             if (!this.isMultiDisburseLoan()) {
@@ -775,6 +801,10 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.transactionProcessingStrategyCode = transactionProcessingStrategyCode;
     }
 
+    public String getTransactionProcessingStrategyCode() {
+        return this.transactionProcessingStrategyCode;
+    }
+
     public void setTransactionProcessingStrategyName(final String transactionProcessingStrategyName) {
         this.transactionProcessingStrategyName = transactionProcessingStrategyName;
     }
@@ -835,6 +865,10 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public List<Charge> getLoanProductCharges() {
         return this.charges;
+    }
+
+    public List<LoanProductPaymentAllocationRule> getLoanProductPaymentAllocationRules() {
+        return this.loanProductPaymentAllocationRules;
     }
 
     public void update(final LoanProductConfigurableAttributes loanConfigurableAttributes) {
@@ -920,6 +954,14 @@ public class LoanProduct extends AbstractPersistableCustom {
         if (command.isChangeInStringParameterNamed(transactionProcessingStrategyCodeParamName, this.transactionProcessingStrategyCode)) {
             final String newValue = command.stringValueOfParameterNamed(transactionProcessingStrategyCodeParamName);
             actualChanges.put(transactionProcessingStrategyCodeParamName, newValue);
+        }
+
+        final String paymentAllocationParamName = "paymentAllocation";
+        if (command.hasParameter(paymentAllocationParamName)) {
+            final JsonArray jsonArray = command.arrayOfParameterNamed(paymentAllocationParamName);
+            if (jsonArray != null) {
+                actualChanges.put(paymentAllocationParamName, command.jsonFragment(paymentAllocationParamName));
+            }
         }
 
         final String chargesParamName = "charges";
@@ -1246,6 +1288,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.loanProductRelatedDetail.updateEnableAutoRepaymentForDownPayment(newValue);
         }
 
+        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE,
+                this.repaymentStartDateType.getValue())) {
+            final Integer newValue = command.integerValueOfParameterNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE);
+            actualChanges.put(LoanProductConstants.REPAYMENT_START_DATE_TYPE, newValue);
+            this.repaymentStartDateType = RepaymentStartDateType.fromInt(newValue);
+        }
         return actualChanges;
     }
 
@@ -1639,6 +1687,10 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public Integer getOverDueDaysForRepaymentEvent() {
         return this.overDueDaysForRepaymentEvent;
+    }
+
+    public RepaymentStartDateType getRepaymentStartDateType() {
+        return this.repaymentStartDateType == null ? RepaymentStartDateType.INVALID : this.repaymentStartDateType;
     }
 
 }

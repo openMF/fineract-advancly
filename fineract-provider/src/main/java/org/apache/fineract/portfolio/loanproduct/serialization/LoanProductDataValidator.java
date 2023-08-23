@@ -81,6 +81,7 @@ public final class LoanProductDataValidator {
     public static final String INTEREST_CALCULATION_PERIOD_TYPE = "interestCalculationPeriodType";
     public static final String IN_ARREARS_TOLERANCE = "inArrearsTolerance";
     public static final String TRANSACTION_PROCESSING_STRATEGY_CODE = "transactionProcessingStrategyCode";
+    public static final String ADVANCED_PAYMENT_ALLOCATIONS = "paymentAllocation";
     public static final String GRACE_ON_PRINCIPAL_PAYMENT = "graceOnPrincipalPayment";
     public static final String GRACE_ON_INTEREST_PAYMENT = "graceOnInterestPayment";
     public static final String GRACE_ON_INTEREST_CHARGED = "graceOnInterestCharged";
@@ -104,10 +105,10 @@ public final class LoanProductDataValidator {
             NUMBER_OF_REPAYMENTS, MIN_NUMBER_OF_REPAYMENTS, MAX_NUMBER_OF_REPAYMENTS, REPAYMENT_FREQUENCY_TYPE, INTEREST_RATE_PER_PERIOD,
             MIN_INTEREST_RATE_PER_PERIOD, MAX_INTEREST_RATE_PER_PERIOD, INTEREST_RATE_FREQUENCY_TYPE, AMORTIZATION_TYPE, INTEREST_TYPE,
             INTEREST_CALCULATION_PERIOD_TYPE, LoanProductConstants.ALLOW_PARTIAL_PERIOD_INTEREST_CALCUALTION_PARAM_NAME,
-            IN_ARREARS_TOLERANCE, TRANSACTION_PROCESSING_STRATEGY_CODE, GRACE_ON_PRINCIPAL_PAYMENT, "recurringMoratoriumOnPrincipalPeriods",
-            GRACE_ON_INTEREST_PAYMENT, GRACE_ON_INTEREST_CHARGED, "charges", ACCOUNTING_RULE, INCLUDE_IN_BORROWER_CYCLE, "startDate",
-            "closeDate", "externalId", IS_LINKED_TO_FLOATING_INTEREST_RATES, FLOATING_RATES_ID, INTEREST_RATE_DIFFERENTIAL,
-            MIN_DIFFERENTIAL_LENDING_RATE, DEFAULT_DIFFERENTIAL_LENDING_RATE, MAX_DIFFERENTIAL_LENDING_RATE,
+            IN_ARREARS_TOLERANCE, TRANSACTION_PROCESSING_STRATEGY_CODE, ADVANCED_PAYMENT_ALLOCATIONS, GRACE_ON_PRINCIPAL_PAYMENT,
+            "recurringMoratoriumOnPrincipalPeriods", GRACE_ON_INTEREST_PAYMENT, GRACE_ON_INTEREST_CHARGED, "charges", ACCOUNTING_RULE,
+            INCLUDE_IN_BORROWER_CYCLE, "startDate", "closeDate", "externalId", IS_LINKED_TO_FLOATING_INTEREST_RATES, FLOATING_RATES_ID,
+            INTEREST_RATE_DIFFERENTIAL, MIN_DIFFERENTIAL_LENDING_RATE, DEFAULT_DIFFERENTIAL_LENDING_RATE, MAX_DIFFERENTIAL_LENDING_RATE,
             IS_FLOATING_INTEREST_RATE_CALCULATION_ALLOWED, "syncExpectedWithDisbursementDate",
             LoanProductAccountingParams.FEES_RECEIVABLE.getValue(), LoanProductAccountingParams.FUND_SOURCE.getValue(),
             LoanProductAccountingParams.INCOME_FROM_FEES.getValue(), LoanProductAccountingParams.INCOME_FROM_PENALTIES.getValue(),
@@ -159,7 +160,7 @@ public final class LoanProductDataValidator {
             LoanProductConstants.OVER_APPLIED_NUMBER, LoanProductConstants.DELINQUENCY_BUCKET_PARAM_NAME,
             LoanProductConstants.DUE_DAYS_FOR_REPAYMENT_EVENT, LoanProductConstants.OVER_DUE_DAYS_FOR_REPAYMENT_EVENT,
             LoanProductConstants.ENABLE_DOWN_PAYMENT, LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT,
-            LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT));
+            LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT, LoanProductConstants.REPAYMENT_START_DATE_TYPE));
 
     private static final String[] SUPPORTED_LOAN_CONFIGURABLE_ATTRIBUTES = { LoanProductConstants.amortizationTypeParamName,
             LoanProductConstants.interestTypeParamName, LoanProductConstants.transactionProcessingStrategyCodeParamName,
@@ -750,6 +751,13 @@ public final class LoanProductDataValidator {
                     .validateForBooleanValue();
             validateDownPaymentPercentage(enableDownPayment, baseDataValidator, element);
             validateAutoRepaymentForDownPayment(enableDownPayment, baseDataValidator, element);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.REPAYMENT_START_DATE_TYPE, element)) {
+            final Integer repaymentStartDateType = this.fromApiJsonHelper
+                    .extractIntegerNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE, element, Locale.getDefault());
+            baseDataValidator.reset().parameter(LoanProductConstants.REPAYMENT_START_DATE_TYPE).value(repaymentStartDateType).notNull()
+                    .isOneOfTheseValues(1, 2);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -1676,6 +1684,15 @@ public final class LoanProductDataValidator {
             validateDownPaymentPercentage(enableDownPayment, baseDataValidator, element);
             validateAutoRepaymentForDownPayment(enableDownPayment, baseDataValidator, element);
         }
+
+        Integer repaymentStartDateType = loanProduct.getRepaymentStartDateType().getValue();
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.REPAYMENT_START_DATE_TYPE, element)) {
+            repaymentStartDateType = this.fromApiJsonHelper.extractIntegerNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE, element,
+                    Locale.getDefault());
+        }
+        baseDataValidator.reset().parameter(LoanProductConstants.REPAYMENT_START_DATE_TYPE).value(repaymentStartDateType).notNull()
+                .isOneOfTheseValues(1, 2);
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 

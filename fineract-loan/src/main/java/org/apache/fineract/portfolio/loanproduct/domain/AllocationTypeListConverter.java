@@ -18,18 +18,21 @@
  */
 package org.apache.fineract.portfolio.loanproduct.domain;
 
+import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.data.GenericEnumListConverter;
 
 @Converter(autoApply = true)
-public class AllocationTypeListConverter extends GenericEnumListConverter<PaymentAllocationType> {
+public class AllocationTypeListConverter extends GenericEnumListConverter<PaymentAllocationType>
+        implements AttributeConverter<List<PaymentAllocationType>, String> {
 
     @Override
-    protected boolean isUnique() {
+    public boolean isUnique() {
         return true;
     }
 
-    protected AllocationTypeListConverter() {
+    public AllocationTypeListConverter() {
         super(PaymentAllocationType.class);
     }
 

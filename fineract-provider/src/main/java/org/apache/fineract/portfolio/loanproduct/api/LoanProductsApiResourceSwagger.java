@@ -113,6 +113,7 @@ final class LoanProductsApiResourceSwagger {
         public Integer interestCalculationPeriodType;
         @Schema(example = "mifos-standard-strategy")
         public String transactionProcessingStrategyCode;
+        public List<AdvancedPaymentData> paymentAllocation;
         @Schema(example = "false")
         public Boolean isLinkedToFloatingInterestRates;
         @Schema(example = "false")
@@ -161,6 +162,8 @@ final class LoanProductsApiResourceSwagger {
         public BigDecimal disbursedAmountPercentageForDownPayment;
         @Schema(example = "false")
         public Boolean enableAutoRepaymentForDownPayment;
+        @Schema(example = "1")
+        public Integer repaymentStartDateType;
 
         // Interest Recalculation
         @Schema(example = "false")
@@ -418,6 +421,18 @@ final class LoanProductsApiResourceSwagger {
             public String description;
         }
 
+        static final class GetLoanProductsRepaymentStartDateType {
+
+            private GetLoanProductsRepaymentStartDateType() {}
+
+            @Schema(example = "1")
+            public Long id;
+            @Schema(example = "repaymentStartDateType.disbursementDate")
+            public String code;
+            @Schema(example = "Disbursement Date")
+            public String description;
+        }
+
         static final class GetLoanProductsInterestRecalculationData {
 
             private GetLoanProductsInterestRecalculationData() {}
@@ -561,6 +576,7 @@ final class LoanProductsApiResourceSwagger {
         public GetLoanProductsResponse.GetLoanProductsAccountingRule accountingRule;
         @Schema(example = "0")
         public Integer principalThresholdForLastInstalment;
+        public GetLoanProductsResponse.GetLoanProductsRepaymentStartDateType repaymentStartDateType;
     }
 
     @Schema(description = "GetLoanProductsTemplateResponse")
@@ -1014,6 +1030,7 @@ final class LoanProductsApiResourceSwagger {
         public Set<GetLoanProductsResponse.GetLoanProductsInterestRecalculationData.GetLoanProductsInterestRecalculationCompoundingType> interestRecalculationCompoundingTypeOptions;
         public Set<GetLoanProductsResponse.GetLoanProductsInterestRecalculationData.GetLoanProductsRescheduleStrategyType> rescheduleStrategyTypeOptions;
         public Set<GetLoanProductsResponse.GetLoanProductsInterestRecalculationData.GetLoanProductsInterestRecalculationCompoundingFrequencyType> interestRecalculationFrequencyTypeOptions;
+        public Set<GetLoanProductsResponse.GetLoanProductsRepaymentStartDateType> repaymentStartDateTypeOptions;
     }
 
     @Schema(description = "GetLoanProductsProductIdResponse")
@@ -1030,6 +1047,18 @@ final class LoanProductsApiResourceSwagger {
             @Schema(example = "interestRateFrequency.periodFrequencyType.months")
             public String code;
             @Schema(example = "Per month")
+            public String description;
+        }
+
+        static final class GetLoanProductsRepaymentStartDateType {
+
+            private GetLoanProductsRepaymentStartDateType() {}
+
+            @Schema(example = "1")
+            public Long id;
+            @Schema(example = "repaymentStartDateType.disbursementDate")
+            public String code;
+            @Schema(example = "Disbursement Date")
             public String description;
         }
 
@@ -1180,6 +1209,8 @@ final class LoanProductsApiResourceSwagger {
         @Schema(example = "Mifos style")
         public String transactionProcessingStrategyName;
         @Schema(example = "[]")
+        public List<AdvancedPaymentData> paymentAllocation;
+        @Schema(example = "[]")
         public List<Integer> charges;
         public Set<GetLoanProductsPrincipalVariationsForBorrowerCycle> productsPrincipalVariationsForBorrowerCycle;
         @Schema(example = "[]")
@@ -1215,6 +1246,7 @@ final class LoanProductsApiResourceSwagger {
         public BigDecimal disbursedAmountPercentageForDownPayment;
         @Schema(example = "false")
         public Boolean enableAutoRepaymentForDownPayment;
+        public GetLoanProductsRepaymentStartDateType repaymentStartDateType;
     }
 
     @Schema(description = "PutLoanProductsProductIdRequest")
@@ -1294,6 +1326,7 @@ final class LoanProductsApiResourceSwagger {
         public Integer interestCalculationPeriodType;
         @Schema(example = "mifos-standard-strategy")
         public String transactionProcessingStrategyCode;
+        public List<AdvancedPaymentData> paymentAllocation;
         @Schema(example = "false")
         public Boolean isLinkedToFloatingInterestRates;
         @Schema(example = "false")
@@ -1342,6 +1375,8 @@ final class LoanProductsApiResourceSwagger {
         public BigDecimal disbursedAmountPercentageForDownPayment;
         @Schema(example = "false")
         public Boolean enableAutoRepaymentForDownPayment;
+        @Schema(example = "1")
+        public Integer repaymentStartDateType;
 
         // Interest Recalculation
         @Schema(example = "false")
@@ -1483,6 +1518,26 @@ final class LoanProductsApiResourceSwagger {
             public boolean active;
         }
 
+    }
+
+    public static final class AdvancedPaymentData {
+
+        @Schema(example = "DEFAULT")
+        public String transactionType;
+        @Schema(example = "[]")
+        public List<PaymentAllocationOrder> paymentAllocationOrder;
+
+        @Schema(example = "NEXT_INSTALLMENT")
+        public String futureInstallmentAllocationRule;
+    }
+
+    public static class PaymentAllocationOrder {
+
+        @Schema(example = "DUE_PAST_PENALTY")
+        public String paymentAllocationRule;
+
+        @Schema(example = "1")
+        public Integer order;
     }
 
     @Schema(description = "PutLoanProductsProductIdResponse")
