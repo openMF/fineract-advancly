@@ -112,11 +112,6 @@ public class SavingsProductDataValidator {
             minBalanceForInterestCalculationParamName, withHoldTaxParamName, taxGroupIdParamName,
             SavingsApiConstants.accrualChargesParamName));
 
-    @Autowired
-    public SavingsProductDataValidator(final FromJsonHelper fromApiJsonHelper) {
-        this.fromApiJsonHelper = fromApiJsonHelper;
-    }
-
     public void validateForCreate(final String json) {
 
         if (StringUtils.isBlank(json)) {
