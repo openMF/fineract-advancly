@@ -45,18 +45,15 @@ import org.apache.fineract.portfolio.savings.domain.SavingsHelper;
 import org.apache.fineract.portfolio.savings.domain.interest.PostingPeriod;
 import org.apache.fineract.portfolio.tax.data.TaxComponentData;
 import org.apache.fineract.portfolio.tax.service.TaxUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountInterestPostingService {
 
     private final SavingsHelper savingsHelper;
-
-    @Autowired
-    public SavingsAccountInterestPostingServiceImpl(final SavingsHelper savingsHelper) {
-        this.savingsHelper = savingsHelper;
-    }
 
     @Override
     public SavingsAccountData postInterest(final MathContext mc, final LocalDate interestPostingUpToDate, final boolean isInterestTransfer,
@@ -106,7 +103,10 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
                     }
 
                     savingsAccountData.updateTransactions(newPostingTransaction);
-
+                    if (savingsAccountData.getSavingsProductData().isAccrualBasedAccountingEnabled()) {
+                        savingsAccountData.updateTransactions(SavingsAccountTransactionData.accrual(savingsAccountData,
+                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting()));
+                    }
                     if (applyWithHoldTax) {
                         createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
                                 savingsAccountData);
@@ -142,7 +142,10 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
                         }
 
                         savingsAccountData.updateTransactions(newPostingTransaction);
-
+                        if (savingsAccountData.getSavingsProductData().isAccrualBasedAccountingEnabled()) {
+                            savingsAccountData.updateTransactions(SavingsAccountTransactionData.accrual(savingsAccountData,
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting()));
+                        }
                         if (applyWithHoldTaxForOldTransaction) {
                             createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
                                     savingsAccountData);

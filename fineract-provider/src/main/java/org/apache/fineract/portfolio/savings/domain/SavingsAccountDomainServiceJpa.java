@@ -35,48 +35,32 @@ import org.apache.fineract.infrastructure.event.business.domain.savings.transact
 import org.apache.fineract.infrastructure.event.business.domain.savings.transaction.SavingsWithdrawalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionDTO;
+import org.apache.fineract.portfolio.savings.domain.interest.PostingPeriod;
 import org.apache.fineract.portfolio.savings.exception.DepositAccountTransactionNotAllowedException;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainService {
 
     private final PlatformSecurityContext context;
     private final SavingsAccountRepositoryWrapper savingsAccountRepository;
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
-    private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper;
     private final JournalEntryWritePlatformService journalEntryWritePlatformService;
     private final ConfigurationDomainService configurationDomainService;
     private final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
-
-    @Autowired
-    public SavingsAccountDomainServiceJpa(final SavingsAccountRepositoryWrapper savingsAccountRepository,
-            final SavingsAccountTransactionRepository savingsAccountTransactionRepository,
-            final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper,
-            final JournalEntryWritePlatformService journalEntryWritePlatformService,
-            final ConfigurationDomainService configurationDomainService, final PlatformSecurityContext context,
-            final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository,
-            final BusinessEventNotifierService businessEventNotifierService) {
-        this.savingsAccountRepository = savingsAccountRepository;
-        this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
-        this.applicationCurrencyRepositoryWrapper = applicationCurrencyRepositoryWrapper;
-        this.journalEntryWritePlatformService = journalEntryWritePlatformService;
-        this.configurationDomainService = configurationDomainService;
-        this.context = context;
-        this.depositAccountOnHoldTransactionRepository = depositAccountOnHoldTransactionRepository;
-        this.businessEventNotifierService = businessEventNotifierService;
-    }
 
     @Transactional
     @Override
@@ -116,7 +100,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final LocalDate today = DateUtils.getBusinessLocalDate();
 
         if (account.isBeforeLastPostingPeriod(transactionDate, backdatedTxnsAllowedTill)) {
-            account.postInterest(mc, today, transactionBooleanValues.isInterestTransfer(), isSavingsInterestPostingAtCurrentPeriodEnd,
+            postInterest(account, mc, today, transactionBooleanValues.isInterestTransfer(), isSavingsInterestPostingAtCurrentPeriodEnd,
                     financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
         } else {
             account.calculateInterestUsing(mc, today, transactionBooleanValues.isInterestTransfer(),
@@ -203,7 +187,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final LocalDate today = DateUtils.getBusinessLocalDate();
         boolean postReversals = this.configurationDomainService.isReversalTransactionAllowed();
         if (account.isBeforeLastPostingPeriod(transactionDate, backdatedTxnsAllowedTill)) {
-            account.postInterest(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
+            postInterest(account, mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
                     postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
         } else {
             account.calculateInterestUsing(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
@@ -324,7 +308,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             if (savingsAccountTransaction.isPostInterestCalculationRequired()
                     && account.isBeforeLastPostingPeriod(savingsAccountTransaction.transactionLocalDate(), backdatedTxnsAllowedTill)) {
 
-                account.postInterest(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
+                postInterest(account, mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
                         postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
             } else {
                 account.calculateInterestUsing(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
@@ -342,4 +326,162 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
 
         return reversal;
     }
+
+    @Override
+    public void postInterest(SavingsAccount account, final MathContext mc, final LocalDate interestPostingUpToDate, final boolean isInterestTransfer,
+            final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final Integer financialYearBeginningMonth,
+            final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final boolean postReversals) {
+        final List<PostingPeriod> postingPeriods = account.calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
+                isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
+                postReversals);
+
+        MonetaryCurrency currency = account.getCurrency();
+        Money interestPostedToDate = Money.zero(currency);
+
+        if (backdatedTxnsAllowedTill) {
+            interestPostedToDate = Money.of(currency, account.getSummary().getTotalInterestPosted());
+        }
+
+        boolean recalucateDailyBalanceDetails = false;
+        boolean applyWithHoldTax = account.isWithHoldTaxApplicableForInterestPosting();
+        final List<SavingsAccountTransaction> withholdTransactions = new ArrayList<>();
+
+        if (backdatedTxnsAllowedTill) {
+            withholdTransactions.addAll(account.findWithHoldSavingsTransactionsWithPivotConfig());
+        } else {
+            withholdTransactions.addAll(account.findWithHoldTransactions());
+        }
+
+        for (final PostingPeriod interestPostingPeriod : postingPeriods) {
+
+            final LocalDate interestPostingTransactionDate = interestPostingPeriod.dateOfPostingTransaction();
+            final Money interestEarnedToBePostedForPeriod = interestPostingPeriod.getInterestEarned();
+
+            if (!interestPostingTransactionDate.isAfter(interestPostingUpToDate)) {
+                interestPostedToDate = interestPostedToDate.plus(interestEarnedToBePostedForPeriod);
+
+                SavingsAccountTransaction postingTransaction = null;
+                if (backdatedTxnsAllowedTill) {
+                    postingTransaction = account.findInterestPostingSavingsTransactionWithPivotConfig(interestPostingTransactionDate);
+                } else {
+                    postingTransaction = account.findInterestPostingTransactionFor(interestPostingTransactionDate);
+                }
+                if (postingTransaction == null) {
+                    SavingsAccountTransaction newPostingTransaction;
+                    if (interestEarnedToBePostedForPeriod.isGreaterThanOrEqualTo(Money.zero(currency))) {
+
+                        newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(), interestPostingTransactionDate,
+                                interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
+                    } else {
+                        newPostingTransaction = SavingsAccountTransaction.overdraftInterest(account, account.office(), interestPostingTransactionDate,
+                                interestEarnedToBePostedForPeriod.negated(), interestPostingPeriod.isUserPosting());
+                    }
+                    if (backdatedTxnsAllowedTill) {
+                        account.addTransactionToExisting(newPostingTransaction);
+                    } else {
+                        account.addTransaction(newPostingTransaction);
+                    }
+                    if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
+                        SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
+                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                interestPostingPeriod.isUserPosting());
+                        if (backdatedTxnsAllowedTill) {
+                            account.addTransactionToExisting(accrualTransaction);
+                        } else {
+                            account.addTransaction(accrualTransaction);
+                        }
+                    }
+                    if (applyWithHoldTax) {
+                        account.createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
+                                backdatedTxnsAllowedTill);
+                    }
+                    recalucateDailyBalanceDetails = true;
+                } else {
+                    boolean correctionRequired = false;
+                    if (postingTransaction.isInterestPostingAndNotReversed()) {
+                        correctionRequired = postingTransaction.hasNotAmount(interestEarnedToBePostedForPeriod);
+                    } else {
+                        correctionRequired = postingTransaction.hasNotAmount(interestEarnedToBePostedForPeriod.negated());
+                    }
+                    if (correctionRequired) {
+                        boolean applyWithHoldTaxForOldTransaction = false;
+                        postingTransaction.reverse();
+                        SavingsAccountTransaction reversal = null;
+                        if (postReversals) {
+                            reversal = SavingsAccountTransaction.reversal(postingTransaction);
+                        }
+                        final SavingsAccountTransaction withholdTransaction = account.findTransactionFor(interestPostingTransactionDate,
+                                withholdTransactions);
+                        if (withholdTransaction != null) {
+                            withholdTransaction.reverse();
+                            applyWithHoldTaxForOldTransaction = true;
+                        }
+                        SavingsAccountTransaction newPostingTransaction;
+                        if (interestEarnedToBePostedForPeriod.isGreaterThanOrEqualTo(Money.zero(currency))) {
+                            newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(),
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                    interestPostingPeriod.isUserPosting());
+                        } else {
+                            newPostingTransaction = SavingsAccountTransaction.overdraftInterest(account, account.office(),
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod.negated(),
+                                    interestPostingPeriod.isUserPosting());
+                        }
+                        if (backdatedTxnsAllowedTill) {
+                            account.addTransactionToExisting(newPostingTransaction);
+                            if (reversal != null) {
+                                account.addTransactionToExisting(reversal);
+                            }
+                        } else {
+                            account.addTransaction(newPostingTransaction);
+                            if (reversal != null) {
+                                account.addTransaction(reversal);
+                            }
+                        }
+                        if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
+                            SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                    interestPostingPeriod.isUserPosting());
+                            if (backdatedTxnsAllowedTill) {
+                                account.addTransactionToExisting(accrualTransaction);
+                            } else {
+                                account.addTransaction(accrualTransaction);
+                            }
+                        }
+                        if (applyWithHoldTaxForOldTransaction) {
+                            account.createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
+                                    backdatedTxnsAllowedTill);
+                        }
+                        recalucateDailyBalanceDetails = true;
+                    }
+                }
+            }
+        }
+
+        if (recalucateDailyBalanceDetails) {
+            // no openingBalance concept supported yet but probably will to
+            // allow
+            // for migrations.
+            Money openingAccountBalance = Money.zero(currency);
+
+            if (backdatedTxnsAllowedTill) {
+                if (account.getSummary().getLastInterestCalculationDate() == null) {
+                    openingAccountBalance = Money.zero(currency);
+                } else {
+                    openingAccountBalance = Money.of(currency, account.getSummary().getRunningBalanceOnPivotDate());
+                }
+            }
+
+            // update existing transactions so derived balance fields are
+            // correct.
+            account.recalculateDailyBalances(openingAccountBalance, interestPostingUpToDate, backdatedTxnsAllowedTill, postReversals);
+        }
+
+        if (!backdatedTxnsAllowedTill) {
+            account.getSummary().updateSummary(currency, account.savingsAccountTransactionSummaryWrapper, account.getTransactions());
+        } else {
+            account.getSummary().updateSummaryWithPivotConfig(currency, account.savingsAccountTransactionSummaryWrapper, null,
+                    account.savingsAccountTransactions);
+        }
+    }
+
 }
