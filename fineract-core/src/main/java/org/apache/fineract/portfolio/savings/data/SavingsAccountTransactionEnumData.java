@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.savings.data;
 
 import java.io.Serializable;
 import lombok.Getter;
+import org.apache.fineract.portfolio.TransactionEntryType;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 
 /**
@@ -43,7 +44,7 @@ public class SavingsAccountTransactionEnumData implements Serializable {
     private final boolean rejectTransfer;
     private final boolean overdraftInterest;
     private final boolean writtenoff;
-    private final boolean overdraftFee = true;
+    private final boolean overdraftFee;
     private final boolean withholdTax;
     private final boolean escheat;
     private final boolean amountHold;
@@ -87,7 +88,7 @@ public class SavingsAccountTransactionEnumData implements Serializable {
     }
 
     public boolean isChargeTransaction() {
-        return isPayCharge() || isWithdrawalFee() || isAnnualFee();
+        return feeDeduction;
     }
 
     public boolean isAnnualFee() {
@@ -102,7 +103,22 @@ public class SavingsAccountTransactionEnumData implements Serializable {
         return Long.valueOf(SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue()).equals(this.id);
     }
 
+    public boolean isCredit() {
+        SavingsAccountTransactionType transactionType = getTransactionTypeEnum();
+        return transactionType != null && transactionType.isCredit();
+    }
+
+    public boolean isDebit() {
+        SavingsAccountTransactionType transactionType = getTransactionTypeEnum();
+        return transactionType != null && transactionType.isDebit();
+    }
+
+    public TransactionEntryType getEntryType() {
+        SavingsAccountTransactionType transactionType = getTransactionTypeEnum();
+        return transactionType == null ? null : transactionType.getEntryType();
+    }
+
     public SavingsAccountTransactionType getTransactionTypeEnum() {
-        return SavingsAccountTransactionType.fromInt(id.intValue());
+        return id == null ? null : SavingsAccountTransactionType.fromInt(id.intValue());
     }
 }
