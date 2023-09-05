@@ -294,8 +294,7 @@ public final class SavingsAccountTransactionData implements Serializable {
         SavingsAccountTransactionEnumData savingsAccountTransactionEnumData = new SavingsAccountTransactionEnumData(
                 savingsAccountTransactionType.getValue().longValue(), savingsAccountTransactionType.getCode(),
                 savingsAccountTransactionType.getValue().toString());
-        return new SavingsAccountTransactionData(amount.getAmount(), date, savingsAccount.getId(), savingsAccountTransactionEnumData,
-                isReversed, null, isManualTransaction, lienTransaction, submittedOnDate);
+        return createImport(transactionType, savingsAccount.getId(), date, amount.getAmount(), submittedOnDate, isManualTransaction);
     }
 
     public static SavingsAccountTransactionData overdraftInterest(final SavingsAccountData savingsAccount, final LocalDate date,
