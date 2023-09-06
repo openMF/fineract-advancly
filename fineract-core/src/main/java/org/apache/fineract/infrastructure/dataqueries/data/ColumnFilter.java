@@ -16,16 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.core.data;
+package org.apache.fineract.infrastructure.dataqueries.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.io.Serializable;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@Getter
-public enum RangeOperator {
+/**
+ * Immutable data object representing datatable data.
+ */
+@Data
+@NoArgsConstructor
+public final class ColumnFilter implements Serializable {
 
-    GTE(">="), LTE("<="), GT(">"), LT("<");
+    private String columnName;
 
-    private final String symbol;
+    private String columnValue;
+
+    private String columnOperation;
+
 }

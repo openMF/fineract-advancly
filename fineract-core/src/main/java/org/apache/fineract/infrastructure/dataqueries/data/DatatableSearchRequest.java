@@ -16,12 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.domain.search;
+package org.apache.fineract.infrastructure.dataqueries.data;
 
-import org.apache.fineract.portfolio.savings.data.SavingsTransactionSearchResult;
-import org.springframework.data.domain.Page;
+import java.io.Serializable;
+import java.util.List;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface SavingsTransactionsSearchRepository {
+/**
+ * Immutable data object representing datatable data.
+ */
+@Data
+@NoArgsConstructor
+public final class DatatableSearchRequest implements Serializable {
 
-    Page<SavingsTransactionSearchResult> searchTransactions(SavingsTransactionSearchParameters searchParameters);
+    private List<ColumnFilter> columnFilters;
+
+    private List<String> resultColumns;
+
+    private String datatable;
+
 }

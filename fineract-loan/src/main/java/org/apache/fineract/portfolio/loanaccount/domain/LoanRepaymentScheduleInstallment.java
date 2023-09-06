@@ -871,8 +871,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    public void updateDueAndCredits(final LocalDate transactionDate, final Money transactionAmount) {
-        updateDueDate(transactionDate);
+    public void updateCredits(final LocalDate transactionDate, final Money transactionAmount) {
         addToCredits(transactionAmount.getAmount());
         addToPrincipal(transactionDate, transactionAmount);
     }
@@ -931,6 +930,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Set<LoanTransactionToRepaymentScheduleMapping> getLoanTransactionToRepaymentScheduleMappings() {
         return this.loanTransactionToRepaymentScheduleMappings;
+    }
+
+    public boolean isDownPayment() {
+        return isDownPayment;
     }
 
 }

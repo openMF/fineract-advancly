@@ -16,24 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.domain.search;
+package org.apache.fineract.portfolio.savings.service;
 
-import lombok.Builder;
-import lombok.Getter;
-import org.apache.fineract.portfolio.savings.DepositAccountType;
-import org.apache.fineract.portfolio.savings.domain.search.SavingsTransactionSearch.Filters;
-import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@Getter
-@Builder
-public class SavingsTransactionSearchParameters {
+@Service
+public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWritePlatformService {
+    
+    @Transactional
+    @Override
+    public void addAccrualAccounting(Long savingsId) {
 
-    private Long savingsId;
-
-    private DepositAccountType depositAccountType;
-
-    private Filters filters;
-
-    private Pageable pageable;
+    }
 
 }

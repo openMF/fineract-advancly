@@ -198,6 +198,15 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
                 date, createdDate, amount, isReversed, appUser, isManualTransaction, lienTransaction, refNo);
     }
 
+    public static SavingsAccountTransaction accrual(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
+            final Money amount, final boolean isManualTransaction) {
+        final boolean isReversed = false;
+        final Boolean lienTransaction = false;
+        final String refNo = null;
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ACCRUAL.getValue(), date,
+                amount, isReversed, null, isManualTransaction, lienTransaction, refNo);
+    }
+
     public static SavingsAccountTransaction interestPosting(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
             final Money amount, final boolean isManualTransaction) {
         final boolean isReversed = false;

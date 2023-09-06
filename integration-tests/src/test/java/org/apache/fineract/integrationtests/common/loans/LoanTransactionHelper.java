@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.client.models.AdvancedPaymentData;
 import org.apache.fineract.client.models.DeleteLoansLoanIdChargesChargeIdResponse;
 import org.apache.fineract.client.models.DeleteLoansLoanIdResponse;
 import org.apache.fineract.client.models.GetDelinquencyTagHistoryResponse;
@@ -60,6 +61,8 @@ import org.apache.fineract.client.models.GetLoansLoanIdTransactions;
 import org.apache.fineract.client.models.GetLoansLoanIdTransactionsTemplateResponse;
 import org.apache.fineract.client.models.GetLoansLoanIdTransactionsTransactionIdResponse;
 import org.apache.fineract.client.models.GetPaymentTypesResponse;
+import org.apache.fineract.client.models.PostLoanProductsRequest;
+import org.apache.fineract.client.models.PostLoanProductsResponse;
 import org.apache.fineract.client.models.PostLoansLoanIdChargesChargeIdRequest;
 import org.apache.fineract.client.models.PostLoansLoanIdChargesChargeIdResponse;
 import org.apache.fineract.client.models.PostLoansLoanIdChargesRequest;
@@ -1905,11 +1908,19 @@ public class LoanTransactionHelper extends IntegrationTest {
         return ok(fineract().loanProducts.updateLoanProduct(id, requestModifyLoan));
     }
 
+    public PostLoanProductsResponse createLoanProduct(PostLoanProductsRequest request) {
+        return ok(fineract().loanProducts.createLoanProduct(request));
+    }
+
     public PostLoansLoanIdTransactionsResponse makeLoanDownPayment(String loanExternalId, PostLoansLoanIdTransactionsRequest request) {
         return ok(fineract().loanTransactions.executeLoanTransaction1(loanExternalId, request, "downPayment"));
     }
 
     public PostLoansLoanIdTransactionsResponse makeLoanDownPayment(Long loanId, PostLoansLoanIdTransactionsRequest request) {
         return ok(fineract().loanTransactions.executeLoanTransaction(loanId, request, "downPayment"));
+    }
+
+    public List<AdvancedPaymentData> getAdvancedPaymentAllocationRules(final Integer loanId) {
+        return ok(fineract().legacy.getAdvancedPaymentAllocationRulesOfLoan(loanId.longValue()));
     }
 }

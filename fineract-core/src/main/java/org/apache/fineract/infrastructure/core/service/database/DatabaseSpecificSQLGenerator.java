@@ -41,11 +41,14 @@ public class DatabaseSpecificSQLGenerator {
         this.databaseTypeResolver = databaseTypeResolver;
     }
 
+    public DatabaseType getDialect() {
+        return databaseTypeResolver.databaseType();
+    }
+
     public String escape(String arg) {
-        DatabaseType dialect = databaseTypeResolver.databaseType();
-        if (dialect.isMySql()) {
+        if (databaseTypeResolver.isMySQL()) {
             return format("`%s`", arg);
-        } else if (dialect.isPostgres()) {
+        } else if (databaseTypeResolver.isPostgreSQL()) {
             return format("\"%s\"", arg);
         }
         return arg;
@@ -244,5 +247,20 @@ public class DatabaseSpecificSQLGenerator {
         }
         return orderBy + orders.stream().map(e -> String.join(" ", alias(escape(e.getProperty()), alias), e.getDirection().name()))
                 .collect(Collectors.joining(", "));
+    }
+
+    public String buildInsert(@NotNull String definition, Collection<String> fields) {
+        if (fields == null || fields.isEmpty()) {
+            return "";
+        }
+        return "INSERT INTO " + escape(definition) + '(' + fields.stream().map(this::escape).collect(Collectors.joining(", "))
+                + ") VALUES (?" + ", ?".repeat(fields.size() - 1) + ')';
+    }
+
+    public String buildUpdate(@NotNull String definition, Collection<String> fields) {
+        if (fields == null || fields.isEmpty()) {
+            return "";
+        }
+        return "UPDATE " + escape(definition) + " SET " + fields.stream().map(e -> escape(e) + " = ?").collect(Collectors.joining(", "));
     }
 }

@@ -16,36 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.domain.search;
+package org.apache.fineract.portfolio.search.data;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
-import org.apache.fineract.infrastructure.core.data.RangeOperator;
-import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
+import lombok.NoArgsConstructor;
 
+/**
+ * Immutable data object representing datatable data.
+ */
 @Data
-public class SavingsTransactionSearch {
+@NoArgsConstructor
+public final class AdvancedQueryRequest implements Serializable {
 
-    private Filters filters;
+    private AdvancedQueryData baseQuery;
 
-    @Data
-    public static class Filters {
+    private List<TableQueryData> datatableQueries;
 
-        private List<RangeFilter<LocalDate>> transactionDate;
-
-        private List<RangeFilter<BigDecimal>> transactionAmount;
-
-        private List<SavingsAccountTransactionType> transactionType;
+    public boolean hasFilter() {
+        return (baseQuery != null && baseQuery.hasFilter())
+                || (datatableQueries != null && datatableQueries.stream().anyMatch(TableQueryData::hasFilter));
     }
 
-    @Data
-    public static class RangeFilter<T> {
-
-        private RangeOperator operator;
-
-        private T value;
+    public boolean hasResultColumn() {
+        return (baseQuery != null && baseQuery.hasResultColumn())
+                || (datatableQueries != null && datatableQueries.stream().anyMatch(TableQueryData::hasResultColumn));
     }
-
 }

@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.domain.search;
+package org.apache.fineract.investor.domain.search;
 
-import java.util.Map;
-import lombok.Data;
+import org.apache.fineract.infrastructure.core.service.PagedRequest;
+import org.apache.fineract.investor.service.search.domain.ExternalAssetOwnerSearchRequest;
+import org.springframework.data.domain.Page;
 
-@Data
-public class BaseQueryParametersMapResult {
+public interface SearchingExternalAssetOwnerRepository {
 
-    private final String baseQueryString;
-    private final Map<String, Object> parametersMap;
+    Page<SearchedExternalAssetOwner> searchInvestorData(PagedRequest<ExternalAssetOwnerSearchRequest> searchRequest);
+
 }
