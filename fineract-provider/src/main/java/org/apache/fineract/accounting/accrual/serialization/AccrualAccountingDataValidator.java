@@ -20,6 +20,7 @@ package org.apache.fineract.accounting.accrual.serialization;
 
 import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.PERIODIC_ACCRUAL_ACCOUNTING_RESOURCE_NAME;
 import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.accrueTillParamName;
+import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.productsParamName;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
@@ -52,7 +53,8 @@ import org.springframework.stereotype.Component;
 public final class AccrualAccountingDataValidator {
 
     private static final Set<String> LOAN_PERIODIC_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(accrueTillParamName, AccrualAccountingConstants.localeParamName, AccrualAccountingConstants.dateFormatParamName));
+            Arrays.asList(accrueTillParamName, AccrualAccountingConstants.localeParamName, 
+                AccrualAccountingConstants.dateFormatParamName, productsParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
 

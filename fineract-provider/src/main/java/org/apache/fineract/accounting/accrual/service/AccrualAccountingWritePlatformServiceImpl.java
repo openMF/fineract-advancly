@@ -20,7 +20,10 @@ package org.apache.fineract.accounting.accrual.service;
 
 import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.PERIODIC_ACCRUAL_ACCOUNTING_EXECUTION_ERROR_CODE;
 import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.PERIODIC_ACCRUAL_ACCOUNTING_RESOURCE_NAME;
+import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.PERIODIC_ACCRUAL_ACCOUNTING_DEPOSIT;
+import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.PERIODIC_ACCRUAL_ACCOUNTING_LOAN;
 import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.accrueTillParamName;
+import static org.apache.fineract.accounting.accrual.api.AccrualAccountingConstants.productsParamName;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -48,7 +51,14 @@ public class AccrualAccountingWritePlatformServiceImpl implements AccrualAccount
         this.accountingDataValidator.validateLoanPeriodicAccrualData(command.json());
         LocalDate tillDate = command.localDateValueOfParameterNamed(accrueTillParamName);
         try {
-            this.loanAccrualPlatformService.addPeriodicAccruals(tillDate);
+            String products = command.stringValueOfParameterNamed(productsParamName);
+            if (products.contains(PERIODIC_ACCRUAL_ACCOUNTING_DEPOSIT)){
+                
+            }
+            if (products.contains(PERIODIC_ACCRUAL_ACCOUNTING_LOAN)){
+                this.loanAccrualPlatformService.addPeriodicAccruals(tillDate);
+            }
+            
         } catch (MultiException e) {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)

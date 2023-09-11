@@ -41,7 +41,7 @@ import org.springframework.stereotype.Component;
 
 @Path("/v1/runaccruals")
 @Component
-@Tag(name = "Periodic Accrual Accounting", description = "Periodic Accrual is to accrue the loan income till the specific date or till batch job scheduled time.\n")
+@Tag(name = "Periodic Accrual Accounting", description = "Periodic Accrual is to accrue the loan income or deposit income/expense till the specific date or till batch job scheduled time.\n")
 @RequiredArgsConstructor
 public class AccrualAccountingApiResource {
 
@@ -51,7 +51,7 @@ public class AccrualAccountingApiResource {
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Executes Periodic Accrual Accounting", method = "POST", description = "Mandatory Fields\n" + "\n" + "tillDate\n")
+    @Operation(summary = "Executes Periodic Accrual Accounting", method = "POST", description = "Mandatory Fields\n" + "\n" + "tillDate\n" + "\n" + "products\n")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = AccrualAccountingApiResourceSwagger.PostRunaccrualsRequest.class)))
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
     public String executePeriodicAccrualAccounting(@Parameter(hidden = true) final String jsonRequestBody) {

@@ -42,6 +42,8 @@ final class AccrualAccountingApiResourceSwagger {
         public String dateFormat;
         @Schema(example = "04 June 2014", description = "which specifies periodic accruals should happen till the given Date", required = true)
         public String tillDate;
+        @Schema(example = "Deposit", description = "which specifies products type to accrue", required = true)
+        public String products;
     }
 
 }
