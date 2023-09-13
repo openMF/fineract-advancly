@@ -530,7 +530,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
         return transactionAmount.isNotEqualTo(amountToCheck);
     }
 
-    public Map<String, Object> toMapData(final String currencyCode) {
+    public Map<String, Object> toMapData(final String currencyCode, final Set<Long> accrualChargeIds) {
         final Map<String, Object> thisTransactionData = new LinkedHashMap<>();
 
         final SavingsAccountTransactionEnumData transactionType = SavingsEnumerations.transactionType(this.typeOf);
@@ -556,7 +556,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
             final List<Map<String, Object>> savingsChargesPaidData = new ArrayList<>();
             for (final SavingsAccountChargePaidBy chargePaidBy : this.savingsAccountChargesPaid) {
                 final Map<String, Object> savingChargePaidData = new LinkedHashMap<>();
-                savingChargePaidData.put("chargeId", chargePaidBy.getSavingsAccountCharge().getCharge().getId());
+                final Long chargeId = chargePaidBy.getSavingsAccountCharge().getCharge().getId();
+                savingChargePaidData.put("chargeId", chargeId);
+                savingChargePaidData.put("isAccrued", accrualChargeIds.contains(chargeId));
                 savingChargePaidData.put("isPenalty", chargePaidBy.getSavingsAccountCharge().getCharge().isPenalty());
                 savingChargePaidData.put("savingsChargeId", chargePaidBy.getSavingsAccountCharge().getId());
                 savingChargePaidData.put("amount", chargePaidBy.getAmount());

@@ -1257,6 +1257,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder excuteAccrualAccountingForSavings() {
+        this.actionName = "EXECUTE";
+        this.entityName = "PERIODICACCRUALACCOUNTINGFORSAVINGS";
+        this.entityId = null;
+        this.href = "/accrualaccounting";
+        return this;
+    }
+
     public CommandWrapperBuilder createGLAccount() {
         this.actionName = "CREATE";
         this.entityName = "GLACCOUNT";
