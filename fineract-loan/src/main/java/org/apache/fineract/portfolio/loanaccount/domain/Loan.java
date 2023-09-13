@@ -2608,6 +2608,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         BigDecimal principalDisbursed = command.bigDecimalValueOfParameterNamed(LoanApiConstants.principalDisbursedParameterName);
         if (this.actualDisbursementDate == null || DateUtils.isBefore(actualDisbursementDate, this.actualDisbursementDate)) {
             this.actualDisbursementDate = actualDisbursementDate;
+        } else if (actualDisbursementDate.isBefore(this.actualDisbursementDate)) {
+            this.actualDisbursementDate = actualDisbursementDate;
         }
         BigDecimal diff = BigDecimal.ZERO;
         Collection<LoanDisbursementDetails> details = fetchUndisbursedDetail();
