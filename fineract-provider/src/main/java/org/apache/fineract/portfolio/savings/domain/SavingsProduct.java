@@ -752,6 +752,12 @@ public class SavingsProduct extends AbstractPersistableCustom {
         return this.accrualCharges;
     }
 
+    public Set<Long> accrualChargeIds() {
+        Set<Long> accrualChargeIds = new HashSet<>();
+        this.accrualCharges.stream().map(charge -> accrualChargeIds.add(charge.getId()));
+        return accrualChargeIds;
+    }
+
     public InterestRateChart applicableChart(@SuppressWarnings("unused") final LocalDate target) {
         return null;
     }

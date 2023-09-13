@@ -1768,12 +1768,14 @@ public class SavingsAccount extends AbstractPersistableCustom {
             trans = getTransactions();
         }
 
+        final Set<Long> accrualChargeIds = product.accrualChargeIds();
+
         // Adding new transactions to the array
         for (final SavingsAccountTransaction transaction : trans) {
             if (transaction.isReversed() && !existingReversedTransactionIds.contains(transaction.getId())) {
-                newSavingsTransactions.add(transaction.toMapData(currencyCode));
+                newSavingsTransactions.add(transaction.toMapData(currencyCode, accrualChargeIds));
             } else if (!existingTransactionIds.contains(transaction.getId())) {
-                newSavingsTransactions.add(transaction.toMapData(currencyCode));
+                newSavingsTransactions.add(transaction.toMapData(currencyCode, accrualChargeIds));
             }
         }
 

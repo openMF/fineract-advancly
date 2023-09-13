@@ -162,7 +162,7 @@ public class AccrualBasedAccountingProcessorForSavings implements AccountingProc
                             transactionId, transactionDate, overdraftAmount, isReversal);
                     if (isPositive) {
                         this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
-                                AccrualAccountsForSavings.INTEREST_ON_SAVINGS.getValue(),
+                                AccrualAccountsForSavings.INTEREST_PAYABLE.getValue(),
                                 AccrualAccountsForSavings.SAVINGS_CONTROL.getValue(), savingsProductId, paymentTypeId, savingsId,
                                 transactionId, transactionDate, amount.subtract(overdraftAmount), isReversal);
                     }

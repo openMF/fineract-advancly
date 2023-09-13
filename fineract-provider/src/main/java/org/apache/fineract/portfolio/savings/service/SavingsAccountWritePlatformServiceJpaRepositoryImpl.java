@@ -1163,6 +1163,18 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         savingsAccount.addCharge(fmt, savingsAccountCharge, chargeDefinition);
         this.savingsAccountChargeRepository.save(savingsAccountCharge);
         this.savingAccountRepositoryWrapper.saveAndFlush(savingsAccount);
+
+        final boolean backdatedTxnsAllowedTill = this.savingAccountAssembler.getPivotConfigStatus();
+        final Set<Long> existingTransactionIds = new HashSet<>();
+        final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        if (backdatedTxnsAllowedTill) {
+            updateSavingsTransactionsDetails(savingsAccount, existingTransactionIds, existingReversedTransactionIds);
+        } else {
+            updateExistingTransactionsDetails(savingsAccount, existingTransactionIds, existingReversedTransactionIds);
+        }
+
+        postJournalEntries(savingsAccount, existingTransactionIds, existingReversedTransactionIds, backdatedTxnsAllowedTill);
+   
         return new CommandProcessingResultBuilder() //
                 .withEntityId(savingsAccountCharge.getId()) //
                 .withOfficeId(savingsAccount.officeId()) //
