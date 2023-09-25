@@ -380,5 +380,4 @@ public class SavingsProductHelper {
         this.daysToEscheat = "90";
         return this;
     }
-
 }
