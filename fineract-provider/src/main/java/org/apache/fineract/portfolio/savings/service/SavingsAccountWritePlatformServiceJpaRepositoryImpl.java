@@ -1856,6 +1856,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         if (backdatedTxnsAllowedTill) {
             this.savingsAccountTransactionRepository.saveAll(account.getSavingsAccountTransactionsWithPivotConfig());
+        } else {
+            account.addTransaction(transaction);
         }
 
         this.savingAccountRepositoryWrapper.save(account);
