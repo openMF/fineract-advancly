@@ -70,16 +70,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.interoperation.domain.InteropIdentifier;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -141,7 +143,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
     protected String accountNumber;
 
     @Column(name = "external_id", nullable = true)
-    protected String externalId;
+    protected ExternalId externalId;
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "client_id", nullable = true)
@@ -345,7 +347,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
     }
 
     public static SavingsAccount createNewApplicationForSubmittal(final Client client, final Group group, final SavingsProduct product,
-            final Staff fieldOfficer, final String accountNo, final String externalId, final AccountType accountType,
+            final Staff fieldOfficer, final String accountNo, final ExternalId externalId, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal interestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
             final SavingsPostingInterestPeriodType interestPostingPeriodType, final SavingsInterestCalculationType interestCalculationType,
@@ -367,7 +369,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
     }
 
     protected SavingsAccount(final Client client, final Group group, final SavingsProduct product, final Staff fieldOfficer,
-            final String accountNo, final String externalId, final SavingsAccountStatusType status, final AccountType accountType,
+            final String accountNo, final ExternalId externalId, final SavingsAccountStatusType status, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal nominalAnnualInterestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
             final SavingsPostingInterestPeriodType interestPostingPeriodType, final SavingsInterestCalculationType interestCalculationType,
@@ -383,7 +385,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
     }
 
     protected SavingsAccount(final Client client, final Group group, final SavingsProduct product, final Staff savingsOfficer,
-            final String accountNo, final String externalId, final SavingsAccountStatusType status, final AccountType accountType,
+            final String accountNo, final ExternalId externalId, final SavingsAccountStatusType status, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal nominalAnnualInterestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
             final SavingsPostingInterestPeriodType interestPostingPeriodType, final SavingsInterestCalculationType interestCalculationType,
@@ -461,7 +463,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
         return this.savingsAccountTransactions;
     }
 
-    public String getExternalId() {
+    public ExternalId getExternalId() {
         return externalId;
     }
 
@@ -1527,10 +1529,13 @@ public class SavingsAccount extends AbstractPersistableCustom {
             this.accountNumber = StringUtils.defaultIfEmpty(newValue, null);
         }
 
-        if (command.isChangeInStringParameterNamed(SavingsApiConstants.externalIdParamName, this.externalId)) {
+        if (command.isChangeInStringParameterNamed(SavingsApiConstants.externalIdParamName, this.externalId.getValue())) {
             final String newValue = command.stringValueOfParameterNamed(SavingsApiConstants.externalIdParamName);
             actualChanges.put(SavingsApiConstants.externalIdParamName, newValue);
-            this.externalId = StringUtils.defaultIfEmpty(newValue, null);
+            this.externalId = ExternalIdFactory.produce(newValue);
+            if (this.externalId.isEmpty() && TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
+                this.externalId = ExternalId.generate();
+            }
         }
 
         if (command.isChangeInLongParameterNamed(SavingsApiConstants.clientIdParamName, clientId())) {
@@ -1768,7 +1773,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
             trans = getTransactions();
         }
 
-        final Set<Long> accrualChargeIds = product.accrualChargeIds();
+        final List<Long> accrualChargeIds = product.accrualChargeIds();
 
         // Adding new transactions to the array
         for (final SavingsAccountTransaction transaction : trans) {
@@ -1862,11 +1867,15 @@ public class SavingsAccount extends AbstractPersistableCustom {
         return this.product;
     }
 
-    private Boolean isCashBasedAccountingEnabledOnSavingsProduct() {
+    public Boolean isCashBasedAccountingEnabledOnSavingsProduct() {
         return this.product.isCashBasedAccountingEnabled();
     }
+    
+    public Boolean isPeriodicAccrualAccounting() {
+        return this.product.isPeriodicAccrualAccounting();
+    }
 
-    private Boolean isAccrualBasedAccountingEnabledOnSavingsProduct() {
+    public Boolean isAccrualBasedAccountingEnabledOnSavingsProduct() {
         return this.product.isAccrualBasedAccountingEnabled();
     }
 
@@ -2657,7 +2666,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
             final AppUser user, final boolean backdatedTxnsAllowedTill) {
         boolean isSavingsChargeApplied = false;
         boolean postReversals = false;
-        UUID refNo = UUID.randomUUID();
+        final String refNo = ExternalId.generate().getValue();
         for (SavingsAccountCharge savingsAccountCharge : this.charges()) {
             if (savingsAccountCharge.isSavingsActivation()) {
                 isSavingsChargeApplied = true;
@@ -3151,6 +3160,37 @@ public class SavingsAccount extends AbstractPersistableCustom {
         } else {
             this.transactions.add(transaction);
         }
+
+        // Charge Accrual Recognition
+        final SavingsAccountTransaction savingsAccountAccrualTransaction = handleAccruedChargeAppliedTransaction(
+            transaction.transactionLocalDate(), savingsAccountCharge);
+        if (savingsAccountAccrualTransaction != null) {
+            savingsAccountAccrualTransaction.getSavingsAccountChargesPaid().add(chargePaidBy);
+            if (backdatedTxnsAllowedTill) {
+                this.savingsAccountTransactions.add(savingsAccountAccrualTransaction);
+            } else {
+                this.transactions.add(savingsAccountAccrualTransaction);
+            }
+        }
+    }
+
+    private SavingsAccountTransaction handleAccruedChargeAppliedTransaction(final LocalDate transactionDate, final SavingsAccountCharge savingsAccountCharge) {
+        SavingsAccountTransaction savingsAccountAccrualTransaction = null;
+        if (isPeriodicAccrualAccounting()) {
+            if (isChargeToBeRecognizedAsAccrual(savingsAccountCharge)) {
+                savingsAccountAccrualTransaction = SavingsAccountTransaction.accrual(this, 
+                        office(), transactionDate, savingsAccountCharge.getAmount(getCurrency()) , false);
+            }
+        }
+        return savingsAccountAccrualTransaction;
+    }
+
+    private boolean isChargeToBeRecognizedAsAccrual(final SavingsAccountCharge savingsAccountCharge) {
+        final Collection<Long> chargeIds = savingsProduct().accrualChargeIds();
+        if (chargeIds.isEmpty()) {
+            return false;
+        }
+        return chargeIds.contains(savingsAccountCharge.getCharge().getId());
     }
 
     private SavingsAccountCharge getCharge(final Long savingsAccountChargeId) {
@@ -3412,7 +3452,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
         for (SavingsAccountCharge charge : this.charges()) {
             if (charge.isSavingsNoActivity() && charge.isActive()) {
                 charge.updateWithdralFeeAmount(this.getAccountBalance());
-                UUID refNo = UUID.randomUUID();
+                final String refNo = ExternalId.generate().getValue();
                 this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, appUser, backdatedTxnsAllowedTill,
                         refNo.toString());
             }

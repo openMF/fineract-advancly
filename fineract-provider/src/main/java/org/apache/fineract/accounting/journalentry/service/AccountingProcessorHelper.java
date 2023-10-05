@@ -198,12 +198,15 @@ public class AccountingProcessorHelper {
             if (map.containsKey("savingsChargesPaid")) {
                 @SuppressWarnings("unchecked")
                 final List<Map<String, Object>> savingsChargesPaidData = (List<Map<String, Object>>) map.get("savingsChargesPaid");
-                for (final Map<String, Object> loanChargePaid : savingsChargesPaidData) {
-                    final Long chargeId = (Long) loanChargePaid.get("chargeId");
-                    final Long loanChargeId = (Long) loanChargePaid.get("savingsChargeId");
-                    final boolean isPenalty = (Boolean) loanChargePaid.get("isPenalty");
-                    final BigDecimal chargeAmountPaid = (BigDecimal) loanChargePaid.get("amount");
-                    final ChargePaymentDTO chargePaymentDTO = new ChargePaymentDTO(chargeId, chargeAmountPaid, loanChargeId);
+                for (final Map<String, Object> savingsChargesPaid : savingsChargesPaidData) {
+                    final Long chargeId = (Long) savingsChargesPaid.get("chargeId");
+                    final Long savingsChargeId = (Long) savingsChargesPaid.get("savingsChargeId");
+                    final boolean isPenalty = (Boolean) savingsChargesPaid.get("isPenalty");
+                    final boolean accrualRecognized = (Boolean) savingsChargesPaid.get("accrualRecognized");
+                    
+                    final BigDecimal chargeAmountPaid = (BigDecimal) savingsChargesPaid.get("amount");
+                    ChargePaymentDTO chargePaymentDTO = new ChargePaymentDTO(chargeId, chargeAmountPaid, savingsChargeId);
+                    chargePaymentDTO.setAccrualRecognized(accrualRecognized);
                     if (isPenalty) {
                         penaltyPayments.add(chargePaymentDTO);
                     } else {
@@ -860,8 +863,8 @@ public class AccountingProcessorHelper {
             throw new PlatformDataIntegrityException("Recent Portfolio changes w.r.t Charges for Savings have Broken the accounting code",
                     "Recent Portfolio changes w.r.t Charges for Savings have Broken the accounting code");
         }
-        ChargePaymentDTO chargePaymentDTO = chargePaymentDTOs.get(0);
-        GLAccount chargeSpecificAccount = getLinkedGLAccountForSavingsCharges(savingsProductId, accountTypeToBeCredited.getValue(),
+        final ChargePaymentDTO chargePaymentDTO = chargePaymentDTOs.get(0);
+        final GLAccount chargeSpecificAccount = getLinkedGLAccountForSavingsCharges(savingsProductId, accountTypeToBeCredited.getValue(),
                 chargePaymentDTO.getChargeId());
 
         final GLAccount savingsControlAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToBeDebited.getValue(),
