@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +56,7 @@ import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
@@ -165,6 +165,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final BusinessEventNotifierService businessEventNotifierService;
     private final GSIMRepositoy gsimRepository;
     private final SavingsAccountInterestPostingService savingsAccountInterestPostingService;
+    private final SavingsAccrualWritePlatformService savingsAccrualWritePlatformService;
 
     @Transactional
     @Override
@@ -821,11 +822,11 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         Integer accountType = null;
         final SavingsAccountTransactionDTO transactionDTO = new SavingsAccountTransactionDTO(fmt, transactionDate, transactionAmount,
                 paymentDetail, savingsAccountTransaction.getCreatedDate(), user, accountType);
-        UUID refNo = UUID.randomUUID();
+        final String refNo = ExternalId.generate().getValue();
         if (savingsAccountTransaction.isDeposit()) {
-            transaction = account.deposit(transactionDTO, false, relaxingDaysConfigForPivotDate, refNo.toString());
+            transaction = account.deposit(transactionDTO, false, relaxingDaysConfigForPivotDate, refNo);
         } else {
-            transaction = account.withdraw(transactionDTO, true, false, relaxingDaysConfigForPivotDate, refNo.toString());
+            transaction = account.withdraw(transactionDTO, true, false, relaxingDaysConfigForPivotDate, refNo);
         }
         final Long newtransactionId = saveTransactionToGenerateTransactionId(transaction);
         final LocalDate postInterestOnDate = null;
@@ -1162,6 +1163,16 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         savingsAccount.addCharge(fmt, savingsAccountCharge, chargeDefinition);
         this.savingsAccountChargeRepository.save(savingsAccountCharge);
+
+        if (savingsAccount.isAccrualBasedAccountingEnabledOnSavingsProduct()) {
+            if (savingsAccrualWritePlatformService.isChargeToBeRecognizedAsAccrual(
+                    savingsAccount.savingsProduct().accrualChargeIds(), savingsAccountCharge)) {
+                final SavingsAccountTransaction savingsAccountAccrualTransaction = savingsAccrualWritePlatformService
+                    .addSavingsChargeAccrualTransaction(savingsAccount, savingsAccountCharge, savingsAccountCharge.getDueLocalDate());
+                savingsAccountTransactionRepository.save(savingsAccountAccrualTransaction);
+            }
+        }
+
         this.savingAccountRepositoryWrapper.saveAndFlush(savingsAccount);
 
         final boolean backdatedTxnsAllowedTill = this.savingAccountAssembler.getPivotConfigStatus();
@@ -1472,6 +1483,15 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         saveTransactionToGenerateTransactionId(chargeTransaction);
 
         this.savingAccountRepositoryWrapper.saveAndFlush(account);
+
+        if (account.isAccrualBasedAccountingEnabledOnSavingsProduct()) {
+            if (savingsAccrualWritePlatformService.isChargeToBeRecognizedAsAccrual(
+                    account.savingsProduct().accrualChargeIds(), savingsAccountCharge)) {
+                final SavingsAccountTransaction savingsAccountAccrualTransaction = savingsAccrualWritePlatformService
+                    .addSavingsChargeAccrualTransaction(account, savingsAccountCharge, transactionDate);
+                savingsAccountTransactionRepository.save(savingsAccountAccrualTransaction);
+            }
+        }
 
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, backdatedTxnsAllowedTill);
 

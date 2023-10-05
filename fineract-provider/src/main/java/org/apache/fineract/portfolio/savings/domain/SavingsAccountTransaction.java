@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -202,7 +203,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
             final Money amount, final boolean isManualTransaction) {
         final boolean isReversed = false;
         final Boolean lienTransaction = false;
-        final String refNo = null;
+        final String refNo = ExternalId.generate().getValue();
         return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ACCRUAL.getValue(), date,
                 amount, isReversed, null, isManualTransaction, lienTransaction, refNo);
     }
@@ -530,7 +531,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
         return transactionAmount.isNotEqualTo(amountToCheck);
     }
 
-    public Map<String, Object> toMapData(final String currencyCode, final Set<Long> accrualChargeIds) {
+    public Map<String, Object> toMapData(final String currencyCode, final List<Long> accrualChargeIds) {
         final Map<String, Object> thisTransactionData = new LinkedHashMap<>();
 
         final SavingsAccountTransactionEnumData transactionType = SavingsEnumerations.transactionType(this.typeOf);
@@ -558,7 +559,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
                 final Map<String, Object> savingChargePaidData = new LinkedHashMap<>();
                 final Long chargeId = chargePaidBy.getSavingsAccountCharge().getCharge().getId();
                 savingChargePaidData.put("chargeId", chargeId);
-                savingChargePaidData.put("isAccrued", accrualChargeIds.contains(chargeId));
+                savingChargePaidData.put("accrualRecognized", accrualChargeIds.contains(chargeId));
                 savingChargePaidData.put("isPenalty", chargePaidBy.getSavingsAccountCharge().getCharge().isPenalty());
                 savingChargePaidData.put("savingsChargeId", chargePaidBy.getSavingsAccountCharge().getId());
                 savingChargePaidData.put("amount", chargePaidBy.getAmount());

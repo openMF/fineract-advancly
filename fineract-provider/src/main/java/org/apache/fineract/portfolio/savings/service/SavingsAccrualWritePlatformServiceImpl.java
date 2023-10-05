@@ -18,6 +18,15 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
+import java.time.LocalDate;
+import java.util.Collection;
+
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargePaidBy;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +37,30 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
     @Override
     public void addAccrualAccounting(Long savingsId) {
 
+    }
+
+    @Override
+    public boolean isChargeToBeRecognizedAsAccrual(final Collection<Long> chargeIds, final SavingsAccountCharge savingsAccountCharge) {
+        if (chargeIds.isEmpty()) {
+            return false;
+        }
+        return chargeIds.contains(savingsAccountCharge.getCharge().getId());
+    }
+
+    @Transactional
+    @Override
+    public SavingsAccountTransaction addSavingsChargeAccrualTransaction(SavingsAccount savingsAccount, 
+        SavingsAccountCharge savingsAccountCharge, LocalDate transactionDate) {
+        final MonetaryCurrency currency = savingsAccount.getCurrency();
+        final Money chargeAmount = savingsAccountCharge.getAmount(currency);
+        SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount, 
+            savingsAccount.office(), transactionDate, chargeAmount, false);
+        final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(savingsAccountTransaction, 
+            savingsAccountCharge, savingsAccountTransaction.getAmount(currency).getAmount());
+        savingsAccountTransaction.getSavingsAccountChargesPaid().add(chargePaidBy);
+
+        savingsAccount.addTransaction(savingsAccountTransaction);
+        return savingsAccountTransaction;
     }
 
 }

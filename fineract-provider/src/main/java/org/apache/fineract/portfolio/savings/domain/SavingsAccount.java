@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
@@ -1774,7 +1773,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
             trans = getTransactions();
         }
 
-        final Set<Long> accrualChargeIds = product.accrualChargeIds();
+        final List<Long> accrualChargeIds = product.accrualChargeIds();
 
         // Adding new transactions to the array
         for (final SavingsAccountTransaction transaction : trans) {
@@ -1868,11 +1867,15 @@ public class SavingsAccount extends AbstractPersistableCustom {
         return this.product;
     }
 
-    private Boolean isCashBasedAccountingEnabledOnSavingsProduct() {
+    public Boolean isCashBasedAccountingEnabledOnSavingsProduct() {
         return this.product.isCashBasedAccountingEnabled();
     }
+    
+    public Boolean isPeriodicAccrualAccounting() {
+        return this.product.isPeriodicAccrualAccounting();
+    }
 
-    private Boolean isAccrualBasedAccountingEnabledOnSavingsProduct() {
+    public Boolean isAccrualBasedAccountingEnabledOnSavingsProduct() {
         return this.product.isAccrualBasedAccountingEnabled();
     }
 
@@ -2663,7 +2666,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
             final AppUser user, final boolean backdatedTxnsAllowedTill) {
         boolean isSavingsChargeApplied = false;
         boolean postReversals = false;
-        UUID refNo = UUID.randomUUID();
+        final String refNo = ExternalId.generate().getValue();
         for (SavingsAccountCharge savingsAccountCharge : this.charges()) {
             if (savingsAccountCharge.isSavingsActivation()) {
                 isSavingsChargeApplied = true;
@@ -3157,6 +3160,37 @@ public class SavingsAccount extends AbstractPersistableCustom {
         } else {
             this.transactions.add(transaction);
         }
+
+        // Charge Accrual Recognition
+        final SavingsAccountTransaction savingsAccountAccrualTransaction = handleAccruedChargeAppliedTransaction(
+            transaction.transactionLocalDate(), savingsAccountCharge);
+        if (savingsAccountAccrualTransaction != null) {
+            savingsAccountAccrualTransaction.getSavingsAccountChargesPaid().add(chargePaidBy);
+            if (backdatedTxnsAllowedTill) {
+                this.savingsAccountTransactions.add(savingsAccountAccrualTransaction);
+            } else {
+                this.transactions.add(savingsAccountAccrualTransaction);
+            }
+        }
+    }
+
+    private SavingsAccountTransaction handleAccruedChargeAppliedTransaction(final LocalDate transactionDate, final SavingsAccountCharge savingsAccountCharge) {
+        SavingsAccountTransaction savingsAccountAccrualTransaction = null;
+        if (isPeriodicAccrualAccounting()) {
+            if (isChargeToBeRecognizedAsAccrual(savingsAccountCharge)) {
+                savingsAccountAccrualTransaction = SavingsAccountTransaction.accrual(this, 
+                        office(), transactionDate, savingsAccountCharge.getAmount(getCurrency()) , false);
+            }
+        }
+        return savingsAccountAccrualTransaction;
+    }
+
+    private boolean isChargeToBeRecognizedAsAccrual(final SavingsAccountCharge savingsAccountCharge) {
+        final Collection<Long> chargeIds = savingsProduct().accrualChargeIds();
+        if (chargeIds.isEmpty()) {
+            return false;
+        }
+        return chargeIds.contains(savingsAccountCharge.getCharge().getId());
     }
 
     private SavingsAccountCharge getCharge(final Long savingsAccountChargeId) {
@@ -3418,7 +3452,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
         for (SavingsAccountCharge charge : this.charges()) {
             if (charge.isSavingsNoActivity() && charge.isActive()) {
                 charge.updateWithdralFeeAmount(this.getAccountBalance());
-                UUID refNo = UUID.randomUUID();
+                final String refNo = ExternalId.generate().getValue();
                 this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, appUser, backdatedTxnsAllowedTill,
                         refNo.toString());
             }
