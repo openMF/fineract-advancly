@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
-import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface SavingsAccountDomainService {
 
@@ -47,11 +46,9 @@ public interface SavingsAccountDomainService {
     SavingsAccountTransaction handleReversal(SavingsAccount account, List<SavingsAccountTransaction> savingsAccountTransactions,
             boolean backdatedTxnsAllowedTill);
 
-    SavingsAccountTransaction handleHold(SavingsAccount account, AppUser createdUser, BigDecimal amount, LocalDate transactionDate,
-            Boolean lienAllowed);
-
     void postInterest(SavingsAccount account, MathContext mc, LocalDate interestPostingUpToDate, boolean isInterestTransfer,
             boolean isSavingsInterestPostingAtCurrentPeriodEnd, Integer financialYearBeginningMonth,
             LocalDate postInterestOnDate, boolean backdatedTxnsAllowedTill, boolean postReversals);
         
+    SavingsAccountTransaction handleHold(SavingsAccount account, BigDecimal amount, LocalDate transactionDate, Boolean lienAllowed);
 }
