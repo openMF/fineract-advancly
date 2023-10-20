@@ -2630,6 +2630,98 @@ public class SavingsAccount extends AbstractPersistableCustom {
         return actualChanges;
     }
 
+    protected Map<String, Object> undoActivate(final AppUser currentUser, final JsonCommand command, final LocalDate operationDate) {
+
+        final Map<String, Object> actualChanges = new LinkedHashMap<>();
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(depositAccountType().resourceName() + SavingsApiConstants.activateAction);
+
+        final SavingsAccountStatusType currentStatus = SavingsAccountStatusType.fromInt(this.status);
+        if (!SavingsAccountStatusType.ACTIVE.hasStateOf(currentStatus)) {
+
+            baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName)
+                    .failWithCodeNoParameterAddedToErrorCode("not.in.active.state");
+
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException(dataValidationErrors);
+            }
+        }
+
+        this.status = SavingsAccountStatusType.APPROVED.getValue();
+        actualChanges.put(SavingsApiConstants.statusParamName, SavingsEnumerations.status(this.status));
+
+        this.rejectedOnDate = null;
+        this.rejectedBy = null;
+        this.withdrawnOnDate = null;
+        this.withdrawnBy = null;
+        this.closedOnDate = null;
+        this.closedBy = null;
+        this.activatedOnDate = null;
+        this.activatedBy = currentUser;
+        this.lockedInUntilDate = calculateDateAccountIsLockedUntil(getActivationLocalDate());
+
+        if (this.client != null && this.client.isActivatedAfter(operationDate)) {
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
+            final String dateAsString = formatter.format(this.client.getActivationLocalDate());
+            baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
+                    .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.client.activation.date");
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException(dataValidationErrors);
+            }
+        }
+
+        if (this.group != null && this.group.isActivatedAfter(operationDate)) {
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
+            final String dateAsString = formatter.format(this.client.getActivationLocalDate());
+            baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
+                    .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.group.activation.date");
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException(dataValidationErrors);
+            }
+        }
+
+        final LocalDate approvalDate = getApprovedOnLocalDate();
+        if (operationDate.isBefore(approvalDate)) {
+
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
+            final String dateAsString = formatter.format(approvalDate);
+
+            baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
+                    .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.approval.date");
+
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException(dataValidationErrors);
+            }
+        }
+
+        validateActivityNotBeforeClientOrGroupTransferDate(SavingsEvent.SAVINGS_UNDO_ACTIVATE, operationDate);
+
+        updateSavingsToApprovedState();
+
+        return actualChanges;
+    }
+
+    protected void updateSavingsToApprovedState() {
+        reverseExistingTransactions();
+
+        for (SavingsAccountCharge charge : this.charges()) {
+            charge.resetToOriginal(currency);
+        }
+    }
+
+    protected void reverseExistingTransactions() {
+        Collection<SavingsAccountTransaction> retainTransactions = new ArrayList<>();
+        for (final SavingsAccountTransaction transaction : this.transactions) {
+            transaction.reverse();
+            if (transaction.getId() != null) {
+                retainTransactions.add(transaction);
+            }
+        }
+        this.transactions.retainAll(retainTransactions);
+    }
+
     public void processAccountUponActivation(final boolean isSavingsInterestPostingAtCurrentPeriodEnd,
             final Integer financialYearBeginningMonth, final AppUser user) {
 

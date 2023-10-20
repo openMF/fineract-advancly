@@ -48,7 +48,10 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class InterestRateChartReadPlatformServiceImpl implements InterestRateChartReadPlatformService {
 
     private final PlatformSecurityContext context;
@@ -99,6 +102,8 @@ public class InterestRateChartReadPlatformServiceImpl implements InterestRateCha
         sql.append("WHEN NOT irc.is_primary_grouping_by_amount then ircd.amount_range_from ");
         sql.append("WHEN NOT irc.is_primary_grouping_by_amount then ircd.amount_range_to ");
         sql.append("END");
+
+        log.info("SQL: {}", sql.toString());
 
         return this.jdbcTemplate.query(
                 con -> con.prepareStatement(sql.toString(), ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE),
@@ -208,7 +213,7 @@ public class InterestRateChartReadPlatformServiceImpl implements InterestRateCha
                     .append("from ")
                     .append("m_interest_rate_chart irc left join m_interest_rate_slab ircd on irc.id=ircd.interest_rate_chart_id ")
                     .append(" left join m_interest_incentives iri on iri.interest_rate_slab_id = ircd.id ")
-                    .append(" left join m_code_value code on " + sqlGenerator.castChar("code.id") + " = iri.attribute_value ")
+                    .append(" left join m_code_value code on code.id = iri.attribute_value ")
                     .append("left join m_currency curr on ircd.currency_code= curr.code ")
                     .append("left join m_deposit_product_interest_rate_chart dpirc on irc.id=dpirc.interest_rate_chart_id ")
                     .append("left join m_savings_product sp on sp.id=dpirc.deposit_product_id ");

@@ -229,6 +229,33 @@ public class DepositAccountWritePlatformServiceJpaRepositoryImpl implements Depo
                 .build();
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult undoActivateFDAccount(Long savingsId, JsonCommand command) {
+        final FixedDepositAccount account = (FixedDepositAccount) this.depositAccountAssembler.assembleFrom(savingsId,
+                DepositAccountType.FIXED_DEPOSIT);
+        checkClientOrGroupActive(account);
+
+        final Set<Long> existingTransactionIds = new HashSet<>();
+        final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+
+        final AppUser user = this.context.authenticatedUser();
+
+        final Map<String, Object> changes = account.undoActivate(user, command, DateUtils.getBusinessLocalDate());
+
+        postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds);
+
+        return new CommandProcessingResultBuilder() //
+                .withEntityId(savingsId) //
+                .withOfficeId(account.officeId()) //
+                .withClientId(account.clientId()) //
+                .withGroupId(account.groupId()) //
+                .withSavingsId(savingsId) //
+                .with(changes) //
+                .build();
+    } 
+
     private Money getActivationCharge(final FixedDepositAccount account) {
         Money activationChargeAmount = Money.zero(account.getCurrency());
         for (SavingsAccountCharge savingsAccountCharge : account.charges()) {

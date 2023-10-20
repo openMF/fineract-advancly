@@ -714,6 +714,11 @@ public class FixedDepositAccount extends SavingsAccount {
         return actualChanges;
     }
 
+    @Override
+    public Map<String, Object> undoActivate(final AppUser currentUser, final JsonCommand command, final LocalDate tenantsTodayDate) {
+        return super.undoActivate(currentUser, command, tenantsTodayDate);
+    }
+
     private LocalDate depositStartDate() {
         // TODO: Support to add deposit start date which can be a date after
         // account activation date.
