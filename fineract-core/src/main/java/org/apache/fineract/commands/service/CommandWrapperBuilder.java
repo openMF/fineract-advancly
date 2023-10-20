@@ -2400,6 +2400,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder fixedDepositAccountUndoActivation(final Long accountId) {
+        this.actionName = "UNDO_ACTIVATE";
+        this.entityName = "FIXEDDEPOSITACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/fixeddepositaccounts/" + accountId + "?command=activate";
+        return this;
+    }
+
     public CommandWrapperBuilder closeFixedDepositAccount(final Long accountId) {
         this.actionName = "CLOSE";
         this.entityName = "FIXEDDEPOSITACCOUNT";
