@@ -178,7 +178,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsMinDepositTermType() {}
 
             @Schema(example = "2")
-            public Integer id;
+            public Long id;
             @Schema(example = "deposit.term.savingsPeriodFrequencyType.months")
             public String code;
             @Schema(example = "Months")
@@ -190,7 +190,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsMaxDepositTermType() {}
 
             @Schema(example = "3")
-            public Integer id;
+            public Long id;
             @Schema(example = "deposit.term.savingsPeriodFrequencyType.years")
             public String code;
             @Schema(example = "Years")
@@ -202,7 +202,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsInterestCompoundingPeriodType() {}
 
             @Schema(example = "4")
-            public Integer id;
+            public Long id;
             @Schema(example = "savings.interest.period.savingsCompoundingInterestPeriodType.monthly")
             public String code;
             @Schema(example = "Monthly")
@@ -214,7 +214,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsInterestPostingPeriodType() {}
 
             @Schema(example = "4")
-            public Integer id;
+            public Long id;
             @Schema(example = "savings.interest.posting.period.savingsPostingInterestPeriodType.monthly")
             public String code;
             @Schema(example = "Monthly")
@@ -226,7 +226,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsInterestCalculationType() {}
 
             @Schema(example = "1")
-            public Integer id;
+            public Long id;
             @Schema(example = "savingsInterestCalculationType.dailybalance")
             public String code;
             @Schema(example = "Daily Balance")
@@ -238,7 +238,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsInterestCalculationDaysInYearType() {}
 
             @Schema(example = "365")
-            public Integer id;
+            public Long id;
             @Schema(example = "savingsInterestCalculationDaysInYearType.days365")
             public String code;
             @Schema(example = "365 Days")
@@ -250,7 +250,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsAccountingRule() {}
 
             @Schema(example = "1")
-            public Integer id;
+            public Long id;
             @Schema(example = "accountingRuleType.none")
             public String code;
             @Schema(example = "NONE")
@@ -258,7 +258,7 @@ final class FixedDepositProductsApiResourceSwagger {
         }
 
         @Schema(example = "3")
-        public Integer id;
+        public Long id;
         @Schema(example = "FD01")
         public String name;
         @Schema(example = "FD01")
@@ -311,7 +311,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsProductIdInterestCompoundingPeriodType() {}
 
             @Schema(example = "1")
-            public Integer id;
+            public Long id;
             @Schema(example = "savings.interest.period.savingsCompoundingInterestPeriodType.daily")
             public String code;
             @Schema(example = "Daily")
@@ -354,7 +354,7 @@ final class FixedDepositProductsApiResourceSwagger {
                 private GetFixedDepositProductsProductIdFeeToIncomeAccountMappingsCharge() {}
 
                 @Schema(example = "11")
-                public Integer id;
+                public Long id;
                 @Schema(example = "sav charge")
                 public String name;
                 @Schema(example = "false")
@@ -376,7 +376,7 @@ final class FixedDepositProductsApiResourceSwagger {
                 private GetFixedDepositProductsProductIdPenaltyToIncomeAccountMappingsCharge() {}
 
                 @Schema(example = "12")
-                public Integer id;
+                public Long id;
                 @Schema(example = "sav 2")
                 public String name;
                 @Schema(example = "false")
@@ -394,7 +394,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsProductIdPreClosurePenalInterestOnType() {}
 
             @Schema(example = "1")
-            public Integer id;
+            public Long id;
             @Schema(example = "preClosurePenalInterestOnType.wholeTerm")
             public String code;
             @Schema(example = "Whole term")
@@ -406,7 +406,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsProductIdMinDepositTermType() {}
 
             @Schema(example = "1")
-            public Integer id;
+            public Long id;
             @Schema(example = "deposit.term.savingsPeriodFrequencyType.weeks")
             public String code;
             @Schema(example = "Weeks")
@@ -418,7 +418,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsProductIdMaxDepositTermType() {}
 
             @Schema(example = "3")
-            public Integer id;
+            public Long id;
             @Schema(example = "deposit.term.savingsPeriodFrequencyType.years")
             public String code;
             @Schema(example = "Years")
@@ -438,7 +438,7 @@ final class FixedDepositProductsApiResourceSwagger {
                     private GetFixedDepositProductsProductIdPeriodType() {}
 
                     @Schema(example = "1")
-                    public Integer id;
+                    public Long id;
                     @Schema(example = "interestChartPeriodType.weeks")
                     public String code;
                     @Schema(example = "Weeks")
@@ -446,7 +446,7 @@ final class FixedDepositProductsApiResourceSwagger {
                 }
 
                 @Schema(example = "18")
-                public Integer id;
+                public Long id;
                 @Schema(example = "from 0 to 90 days")
                 public String description;
                 public GetFixedDepositProductsProductIdPeriodType periodType;
@@ -460,11 +460,11 @@ final class FixedDepositProductsApiResourceSwagger {
             }
 
             @Schema(example = "8")
-            public Integer id;
+            public Long id;
             @Schema(example = "[2014, 1, 1]")
             public LocalDate fromDate;
             @Schema(example = "8")
-            public Integer savingsProductId;
+            public Long savingsProductId;
             @Schema(example = "Fixed deposit product")
             public String savingsProductName;
             public Set<GetFixedDepositProductsProductIdChartSlabs> chartSlabs;
@@ -472,7 +472,7 @@ final class FixedDepositProductsApiResourceSwagger {
         }
 
         @Schema(example = "1")
-        public Integer id;
+        public Long id;
         @Schema(example = "Fixed deposit product")
         public String name;
         @Schema(example = "FD01")
