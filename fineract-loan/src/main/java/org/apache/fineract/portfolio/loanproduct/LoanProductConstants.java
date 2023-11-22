@@ -159,4 +159,5 @@ public interface LoanProductConstants {
     // loan schedule type
     String LOAN_SCHEDULE_TYPE = "loanScheduleType";
 
+    String ALLOW_ACCRUAL_POSTING_IN_ARREARS = "allowAccrualPostingInArrears";
 }

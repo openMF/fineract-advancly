@@ -1799,7 +1799,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or ( ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or ( ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
-                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and loan.is_npa=false and loan.is_charged_off = false and ls.duedate <= :currentDate) ");
+                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and ")
+                .append(" (mpl.allow_accrual_posting_in_arrears=true or loan.is_npa=false) and loan.is_charged_off = false and ls.duedate <= :currentDate) ");
 
         if (organisationStartDate != null) {
             sqlBuilder.append(" and ls.duedate > :organisationStartDate ");
@@ -1824,7 +1825,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or ( ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or ( ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
-                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and loan.is_npa=false and loan.is_charged_off = false) ");
+                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and ")
+                .append(" (mpl.allow_accrual_posting_in_arrears=true or loan.is_npa=false) and loan.is_charged_off = false) ");
 
         if (organisationStartDate != null) {
             sqlBuilder.append(" and ls.duedate > :organisationStartDate ");
@@ -1861,7 +1863,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" or (ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tillDate or loan.closedon_date is null)")
-                .append(" and loan.is_npa=false and loan.is_charged_off = false and (ls.duedate <= :tillDate or (ls.duedate > :tillDate and ls.fromdate < :tillDate)")
+                .append(" and (mpl.allow_accrual_posting_in_arrears=true or loan.is_npa=false) and loan.is_charged_off = false and (ls.duedate <= :tillDate or (ls.duedate > :tillDate and ls.fromdate < :tillDate)")
                 .append(" or (ls.installment = 1 and ls.fromdate = :tillDate))) ");
         Map<String, Object> paramMap = new HashMap<>(5);
         if (organisationStartDate != null) {
@@ -1890,7 +1892,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" or (ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tillDate or loan.closedon_date is null)")
-                .append(" and loan.is_npa=false and loan.is_charged_off = false)");
+                .append(" and (mpl.allow_accrual_posting_in_arrears=true or loan.is_npa=false) and loan.is_charged_off = false)");
         Map<String, Object> paramMap = new HashMap<>(5);
         if (organisationStartDate != null) {
             sqlBuilder.append(" and ls.duedate > :organisationStartDate ");

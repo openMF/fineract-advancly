@@ -168,6 +168,8 @@ final class LoanProductsApiResourceSwagger {
         public Integer repaymentStartDateType;
         @Schema(example = "false")
         public Boolean disableScheduleExtensionForDownPayment;
+        @Schema(example = "false")
+        public Boolean allowAccrualPostingInArrears;
 
         // Interest Recalculation
         @Schema(example = "false")
@@ -1258,6 +1260,8 @@ final class LoanProductsApiResourceSwagger {
         public GetLoanProductsRepaymentStartDateType repaymentStartDateType;
         @Schema(example = "false")
         public Boolean disableScheduleExtensionForDownPayment;
+        @Schema(example = "false")
+        public Boolean allowAccrualPostingInArrears;
     }
 
     @Schema(description = "PutLoanProductsProductIdRequest")
@@ -1392,6 +1396,8 @@ final class LoanProductsApiResourceSwagger {
         public Integer repaymentStartDateType;
         @Schema(example = "false")
         public Boolean disableScheduleExtensionForDownPayment;
+        @Schema(example = "false")
+        public Boolean allowAccrualPostingInArrears;
 
         // Interest Recalculation
         @Schema(example = "false")
