@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -48,8 +49,6 @@ import org.apache.fineract.portfolio.savings.domain.interest.PostingPeriod;
 import org.apache.fineract.portfolio.tax.data.TaxComponentData;
 import org.apache.fineract.portfolio.tax.service.TaxUtils;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -142,8 +141,9 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
 
                         savingsAccountData.updateTransactions(newPostingTransaction);
                         if (savingsAccountData.getSavingsProductData().isAccrualBasedAccountingEnabled()) {
-                            savingsAccountData.updateTransactions(SavingsAccountTransactionData.accrual(savingsAccountData,
-                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting()));
+                            savingsAccountData.updateTransactions(
+                                    SavingsAccountTransactionData.accrual(savingsAccountData, interestPostingTransactionDate,
+                                            interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting()));
                         }
                         if (applyWithHoldTaxForOldTransaction) {
                             createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,

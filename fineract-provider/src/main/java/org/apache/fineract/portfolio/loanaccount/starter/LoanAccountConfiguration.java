@@ -198,7 +198,7 @@ public class LoanAccountConfiguration {
             LoanTransactionRepository loanTransactionRepository,
             LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService,
             ConfigurationDomainService configurationDomainService, ExternalIdFactory externalIdFactory) {
-        return new LoanAccrualWritePlatformServiceImpl(loanReadPlatformService, loanChargeReadPlatformService, jdbcTemplate, sqlGenerator,
+        return new LoanAccrualWritePlatformServiceImpl(loanReadPlatformService, loanChargeReadPlatformService, jdbcTemplate,
                 journalEntryWritePlatformService, context, loanRepositoryWrapper, loanRepository, officeRepository,
                 businessEventNotifierService, loanTransactionRepository, loanAccrualTransactionBusinessEventService,
                 configurationDomainService, externalIdFactory);

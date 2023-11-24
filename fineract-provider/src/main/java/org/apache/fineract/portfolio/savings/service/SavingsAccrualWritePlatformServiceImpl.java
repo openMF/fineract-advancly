@@ -20,7 +20,6 @@ package org.apache.fineract.portfolio.savings.service;
 
 import java.time.LocalDate;
 import java.util.Collection;
-
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
@@ -32,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWritePlatformService {
-    
+
     @Transactional
     @Override
     public void addAccrualAccounting(Long savingsId) {
@@ -49,14 +48,14 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
 
     @Transactional
     @Override
-    public SavingsAccountTransaction addSavingsChargeAccrualTransaction(SavingsAccount savingsAccount, 
-        SavingsAccountCharge savingsAccountCharge, LocalDate transactionDate) {
+    public SavingsAccountTransaction addSavingsChargeAccrualTransaction(SavingsAccount savingsAccount,
+            SavingsAccountCharge savingsAccountCharge, LocalDate transactionDate) {
         final MonetaryCurrency currency = savingsAccount.getCurrency();
         final Money chargeAmount = savingsAccountCharge.getAmount(currency);
-        SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount, 
-            savingsAccount.office(), transactionDate, chargeAmount, false);
-        final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(savingsAccountTransaction, 
-            savingsAccountCharge, savingsAccountTransaction.getAmount(currency).getAmount());
+        SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount, savingsAccount.office(),
+                transactionDate, chargeAmount, false);
+        final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(savingsAccountTransaction, savingsAccountCharge,
+                savingsAccountTransaction.getAmount(currency).getAmount());
         savingsAccountTransaction.getSavingsAccountChargesPaid().add(chargePaidBy);
 
         savingsAccount.addTransaction(savingsAccountTransaction);

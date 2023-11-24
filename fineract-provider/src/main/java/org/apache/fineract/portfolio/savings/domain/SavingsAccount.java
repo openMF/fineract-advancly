@@ -1852,7 +1852,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
     public Boolean isCashBasedAccountingEnabledOnSavingsProduct() {
         return this.product.isCashBasedAccountingEnabled();
     }
-    
+
     public Boolean isPeriodicAccrualAccounting() {
         return this.product.isPeriodicAccrualAccounting();
     }
@@ -2587,11 +2587,11 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
         this.closedBy = null;
         this.activatedOnDate = null;
         this.activatedBy = currentUser;
-        this.lockedInUntilDate = calculateDateAccountIsLockedUntil(getActivationLocalDate());
+        this.lockedInUntilDate = calculateDateAccountIsLockedUntil(getActivationDate());
 
         if (this.client != null && this.client.isActivatedAfter(operationDate)) {
             final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
-            final String dateAsString = formatter.format(this.client.getActivationLocalDate());
+            final String dateAsString = formatter.format(this.client.getActivationDate());
             baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.client.activation.date");
             if (!dataValidationErrors.isEmpty()) {
@@ -2601,7 +2601,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
 
         if (this.group != null && this.group.isActivatedAfter(operationDate)) {
             final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
-            final String dateAsString = formatter.format(this.client.getActivationLocalDate());
+            final String dateAsString = formatter.format(this.client.getActivationDate());
             baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.group.activation.date");
             if (!dataValidationErrors.isEmpty()) {
@@ -2609,7 +2609,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        final LocalDate approvalDate = getApprovedOnLocalDate();
+        final LocalDate approvalDate = getApprovedOnDate();
         if (operationDate.isBefore(approvalDate)) {
 
             final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(command.extractLocale());
@@ -2699,8 +2699,9 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
             LocalDate postInterestAsOnDate = null;
             if (this.isBeforeLastPostingPeriod(getActivationDate(), backdatedTxnsAllowedTill)) {
                 final LocalDate today = DateUtils.getBusinessLocalDate();
-                // this.postInterest(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
-                //        postInterestAsOnDate, backdatedTxnsAllowedTill, postReversals);
+                // this.postInterest(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
+                // financialYearBeginningMonth,
+                // postInterestAsOnDate, backdatedTxnsAllowedTill, postReversals);
             } else {
                 final LocalDate today = DateUtils.getBusinessLocalDate();
                 this.calculateInterestUsing(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
@@ -3177,7 +3178,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
 
         // Charge Accrual Recognition
         final SavingsAccountTransaction savingsAccountAccrualTransaction = handleAccruedChargeAppliedTransaction(
-            transaction.transactionLocalDate(), savingsAccountCharge);
+                transaction.getTransactionDate(), savingsAccountCharge);
         if (savingsAccountAccrualTransaction != null) {
             savingsAccountAccrualTransaction.getSavingsAccountChargesPaid().add(chargePaidBy);
             if (backdatedTxnsAllowedTill) {
@@ -3188,12 +3189,13 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    private SavingsAccountTransaction handleAccruedChargeAppliedTransaction(final LocalDate transactionDate, final SavingsAccountCharge savingsAccountCharge) {
+    private SavingsAccountTransaction handleAccruedChargeAppliedTransaction(final LocalDate transactionDate,
+            final SavingsAccountCharge savingsAccountCharge) {
         SavingsAccountTransaction savingsAccountAccrualTransaction = null;
         if (isPeriodicAccrualAccounting()) {
             if (isChargeToBeRecognizedAsAccrual(savingsAccountCharge)) {
-                savingsAccountAccrualTransaction = SavingsAccountTransaction.accrual(this, 
-                        office(), transactionDate, savingsAccountCharge.getAmount(getCurrency()) , false);
+                savingsAccountAccrualTransaction = SavingsAccountTransaction.accrual(this, office(), transactionDate,
+                        savingsAccountCharge.getAmount(getCurrency()), false);
             }
         }
         return savingsAccountAccrualTransaction;
@@ -3461,7 +3463,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
             if (charge.isSavingsNoActivity() && charge.isActive()) {
                 charge.updateWithdralFeeAmount(this.getAccountBalance());
                 final String refNo = ExternalId.generate().getValue();
-                this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, appUser, backdatedTxnsAllowedTill,
+                this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, backdatedTxnsAllowedTill,
                         refNo.toString());
             }
         }
@@ -3701,21 +3703,21 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
     public void validateForAccountBlock() {
         final SavingsAccountSubStatusEnum currentSubStatus = SavingsAccountSubStatusEnum.fromInt(this.getSubStatus());
         if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(currentSubStatus)) {
-            throw new SavingsAccountBlockedException(this.getId());
+            throw new SavingsAccountBlockedException(this.getAccountNumber());
         }
     }
 
     public void validateForDebitBlock() {
         final SavingsAccountSubStatusEnum currentSubStatus = SavingsAccountSubStatusEnum.fromInt(this.getSubStatus());
         if (SavingsAccountSubStatusEnum.BLOCK_DEBIT.hasStateOf(currentSubStatus)) {
-            throw new SavingsAccountDebitsBlockedException(this.getId());
+            throw new SavingsAccountDebitsBlockedException(this.getAccountNumber());
         }
     }
 
     public void validateForCreditBlock() {
         final SavingsAccountSubStatusEnum currentSubStatus = SavingsAccountSubStatusEnum.fromInt(this.getSubStatus());
         if (SavingsAccountSubStatusEnum.BLOCK_CREDIT.hasStateOf(currentSubStatus)) {
-            throw new SavingsAccountCreditsBlockedException(this.getId());
+            throw new SavingsAccountCreditsBlockedException(this.getAccountNumber());
         }
     }
 

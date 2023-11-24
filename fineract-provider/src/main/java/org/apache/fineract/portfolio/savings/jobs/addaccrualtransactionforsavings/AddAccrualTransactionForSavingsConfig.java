@@ -52,8 +52,8 @@ public class AddAccrualTransactionForSavingsConfig {
 
     @Bean
     public Job addAccrualTransactionForSavingsJob() {
-        return new JobBuilder(JobName.ADD_PERIODIC_ACCRUAL_ENTRIES_FOR_SAVINGS_WITH_INCOME_POSTED_AS_TRANSACTIONS.name(), jobRepository).start(addAccrualTransactionForSavingsStep())
-                .incrementer(new RunIdIncrementer()).build();
+        return new JobBuilder(JobName.ADD_PERIODIC_ACCRUAL_ENTRIES_FOR_SAVINGS_WITH_INCOME_POSTED_AS_TRANSACTIONS.name(), jobRepository)
+                .start(addAccrualTransactionForSavingsStep()).incrementer(new RunIdIncrementer()).build();
     }
 
     @Bean

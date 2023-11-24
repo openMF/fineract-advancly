@@ -47,8 +47,8 @@ public interface SavingsAccountDomainService {
             boolean backdatedTxnsAllowedTill);
 
     void postInterest(SavingsAccount account, MathContext mc, LocalDate interestPostingUpToDate, boolean isInterestTransfer,
-            boolean isSavingsInterestPostingAtCurrentPeriodEnd, Integer financialYearBeginningMonth,
-            LocalDate postInterestOnDate, boolean backdatedTxnsAllowedTill, boolean postReversals);
-        
+            boolean isSavingsInterestPostingAtCurrentPeriodEnd, Integer financialYearBeginningMonth, LocalDate postInterestOnDate,
+            boolean backdatedTxnsAllowedTill, boolean postReversals);
+
     SavingsAccountTransaction handleHold(SavingsAccount account, BigDecimal amount, LocalDate transactionDate, Boolean lienAllowed);
 }

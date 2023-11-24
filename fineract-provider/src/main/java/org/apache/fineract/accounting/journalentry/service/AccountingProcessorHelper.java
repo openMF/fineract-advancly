@@ -202,7 +202,7 @@ public class AccountingProcessorHelper {
                     final Long savingsChargeId = (Long) savingsChargesPaid.get("savingsChargeId");
                     final boolean isPenalty = (Boolean) savingsChargesPaid.get("isPenalty");
                     final boolean accrualRecognized = (Boolean) savingsChargesPaid.get("accrualRecognized");
-                    
+
                     final BigDecimal chargeAmountPaid = (BigDecimal) savingsChargesPaid.get("amount");
                     ChargePaymentDTO chargePaymentDTO = new ChargePaymentDTO(chargeId, chargeAmountPaid, savingsChargeId);
                     chargePaymentDTO.setAccrualRecognized(accrualRecognized);
