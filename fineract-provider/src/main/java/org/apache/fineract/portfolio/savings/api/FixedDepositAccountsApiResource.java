@@ -192,7 +192,8 @@ public class FixedDepositAccountsApiResource {
 
         this.context.authenticatedUser().validateHasReadPermission(DepositsApiConstants.FIXED_DEPOSIT_ACCOUNT_RESOURCE_NAME);
 
-        if (!(CommandParameterUtil.is(chargeStatus, "all") || CommandParameterUtil.is(chargeStatus, "active") || CommandParameterUtil.is(chargeStatus, "inactive"))) {
+        if (!(CommandParameterUtil.is(chargeStatus, "all") || CommandParameterUtil.is(chargeStatus, "active")
+                || CommandParameterUtil.is(chargeStatus, "inactive"))) {
             throw new UnrecognizedQueryParamException("status", chargeStatus, new Object[] { "all", "active", "inactive" });
         }
 
@@ -369,10 +370,10 @@ public class FixedDepositAccountsApiResource {
 
         if (commandRequest == null) {
             throw new UnrecognizedQueryParamException("command", commandParam,
-                    new Object[] { "reject", "withdrawnByApplicant", "approve", "undoapproval", "activate", "undoactivate", 
-                        "calculateInterest", "postInterest", "close", "prematureClose", "calculatePrematureAmount" });
+                    new Object[] { "reject", "withdrawnByApplicant", "approve", "undoapproval", "activate", "undoactivate",
+                            "calculateInterest", "postInterest", "close", "prematureClose", "calculatePrematureAmount" });
         }
-        
+
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
     }

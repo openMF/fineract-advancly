@@ -412,7 +412,7 @@ public final class SavingsAccountTransactionData implements Serializable {
     }
 
     public boolean occursOn(final LocalDate occursOnDate) {
-        return getTransactionDate().isEqual(occursOnDate);
+        return DateUtils.isEqual(occursOnDate, getTransactionDate());
     }
 
     public EndOfDayBalance toEndOfDayBalanceBoundedBy(final Money openingBalance, final LocalDateInterval boundedBy,
@@ -426,7 +426,7 @@ public final class SavingsAccountTransactionData implements Serializable {
         LocalDate balanceStartDate = getTransactionDate();
         LocalDate balanceEndDate = getEndOfBalanceLocalDate();
 
-        if (boundedBy.startDate().isAfter(balanceStartDate)) {
+        if (DateUtils.isAfter(boundedBy.startDate(), balanceStartDate)) {
             balanceStartDate = boundedBy.startDate();
             final LocalDateInterval spanOfBalance = LocalDateInterval.create(balanceStartDate, balanceEndDate);
             numberOfDaysOfBalance = spanOfBalance.daysInPeriodInclusiveOfEndDate();
@@ -442,7 +442,7 @@ public final class SavingsAccountTransactionData implements Serializable {
             }
         }
 
-        if (balanceEndDate.isAfter(boundedBy.endDate())) {
+        if (DateUtils.isAfter(balanceEndDate, boundedBy.endDate())) {
             balanceEndDate = boundedBy.endDate();
             final LocalDateInterval spanOfBalance = LocalDateInterval.create(balanceStartDate, balanceEndDate);
             numberOfDaysOfBalance = spanOfBalance.daysInPeriodInclusiveOfEndDate();
@@ -489,7 +489,7 @@ public final class SavingsAccountTransactionData implements Serializable {
 
     public void updateCumulativeBalanceAndDates(final MonetaryCurrency currency, final LocalDate endOfBalanceDate) {
         // balance end date should not be before transaction date
-        if (endOfBalanceDate != null && endOfBalanceDate.isBefore(this.transactionDate)) {
+        if (endOfBalanceDate != null && DateUtils.isBefore(endOfBalanceDate, this.transactionDate)) {
             this.balanceEndDate = this.transactionDate;
         } else if (endOfBalanceDate != null) {
             this.balanceEndDate = endOfBalanceDate;
@@ -511,7 +511,7 @@ public final class SavingsAccountTransactionData implements Serializable {
 
     public boolean isFeeCharge() {
         final SavingsAccountChargesPaidByData chargePaidBy = getSavingsAccountChargePaidBy();
-        return (isPayCharge() && chargePaidBy != null) ? chargePaidBy.isFeeCharge() : false;
+        return isPayCharge() && chargePaidBy != null && chargePaidBy.isFeeCharge();
     }
 
     public void setChargesPaidByData(final SavingsAccountChargesPaidByData savingsAccountChargesPaidByData) {
@@ -528,7 +528,7 @@ public final class SavingsAccountTransactionData implements Serializable {
 
     public boolean isPenaltyCharge() {
         final SavingsAccountChargesPaidByData chargePaidBy = getSavingsAccountChargePaidBy();
-        return (isPayCharge() && chargePaidBy != null) ? chargePaidBy.isPenaltyCharge() : false;
+        return isPayCharge() && chargePaidBy != null && chargePaidBy.isPenaltyCharge();
     }
 
     public boolean isWaiveFeeChargeAndNotReversed() {
@@ -537,7 +537,7 @@ public final class SavingsAccountTransactionData implements Serializable {
 
     public boolean isWaiveFeeCharge() {
         final SavingsAccountChargesPaidByData chargePaidBy = getSavingsAccountChargePaidBy();
-        return (isWaiveCharge() && chargePaidBy != null) ? chargePaidBy.isFeeCharge() : false;
+        return isWaiveCharge() && chargePaidBy != null && chargePaidBy.isFeeCharge();
     }
 
     public boolean isWaiveCharge() {
@@ -550,7 +550,7 @@ public final class SavingsAccountTransactionData implements Serializable {
 
     public boolean isWaivePenaltyCharge() {
         final SavingsAccountChargesPaidByData chargePaidBy = getSavingsAccountChargePaidBy();
-        return (isWaiveCharge() && chargePaidBy != null) ? chargePaidBy.isPenaltyCharge() : false;
+        return isWaiveCharge() && chargePaidBy != null && chargePaidBy.isPenaltyCharge();
     }
 
     private SavingsAccountChargesPaidByData getSavingsAccountChargePaidBy() {
@@ -582,7 +582,7 @@ public final class SavingsAccountTransactionData implements Serializable {
         thisTransactionData.put("id", getId());
         thisTransactionData.put("officeId", officeId);
         thisTransactionData.put("type", transactionType);
-        thisTransactionData.put("reversed", Boolean.valueOf(isReversed()));
+        thisTransactionData.put("reversed", isReversed());
         thisTransactionData.put("date", getTransactionDate());
         thisTransactionData.put("currency", currencyData);
         thisTransactionData.put("amount", this.amount);
@@ -592,10 +592,8 @@ public final class SavingsAccountTransactionData implements Serializable {
             thisTransactionData.put("paymentTypeId", this.paymentDetailData.getPaymentType().getId());
         }
 
-        /***
-         * Sending data in a map, though in savings we currently expect a transaction to always repay a single charge
-         * (or may repay a part of a single charge too)
-         ***/
+        // Sending data in a map, though in savings we currently expect a transaction to always repay a single charge
+        // (or may repay a part of a single charge too)
         if (!this.chargesPaidByData.isEmpty()) {
             final List<Map<String, Object>> savingsChargesPaidData = new ArrayList<>();
             for (final SavingsAccountChargesPaidByData chargePaidBy : this.chargesPaidByData) {

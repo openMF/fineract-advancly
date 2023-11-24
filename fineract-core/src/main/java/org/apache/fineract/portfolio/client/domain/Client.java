@@ -100,10 +100,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "lastname", length = 50)
     private String lastname;
 
-    @Column(name = "fullname", length = 100)
+    @Column(name = "fullname", length = 160)
     private String fullname;
 
-    @Column(name = "display_name", length = 100, nullable = false)
+    @Column(name = "display_name", length = 160, nullable = false)
     private String displayName;
 
     @Column(name = "mobile_no", length = 50, unique = true)
@@ -407,10 +407,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return ClientStatus.fromInt(this.status).isPending();
     }
 
-    private boolean isDateInTheFuture(final LocalDate localDate) {
-        return localDate.isAfter(DateUtils.getBusinessLocalDate());
-    }
-
     public boolean isRejected() {
         return ClientStatus.fromInt(this.status).isRejected();
     }
@@ -444,89 +440,69 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private void validateActivationDate(final List<ApiParameterError> dataValidationErrors) {
-
-        if (getSubmittedOnDate() != null && isDateInTheFuture(getSubmittedOnDate())) {
-
+        if (getSubmittedOnDate() != null && DateUtils.isDateInTheFuture(getSubmittedOnDate())) {
             final String defaultUserMessage = "submitted date cannot be in the future.";
             final ApiParameterError error = ApiParameterError.parameterError("error.msg.clients.submittedOnDate.in.the.future",
                     defaultUserMessage, ClientApiConstants.submittedOnDateParamName, this.submittedOnDate);
 
             dataValidationErrors.add(error);
         }
-
-        if (getActivationLocalDate() != null && getSubmittedOnDate() != null && getSubmittedOnDate().isAfter(getActivationLocalDate())) {
-
+        if (getActivationDate() != null && DateUtils.isAfter(getSubmittedOnDate(), getActivationDate())) {
             final String defaultUserMessage = "submitted date cannot be after the activation date";
             final ApiParameterError error = ApiParameterError.parameterError("error.msg.clients.submittedOnDate.after.activation.date",
                     defaultUserMessage, ClientApiConstants.submittedOnDateParamName, this.submittedOnDate);
 
             dataValidationErrors.add(error);
         }
-
-        if (getReopenedDate() != null && getActivationLocalDate() != null && getReopenedDate().isAfter(getActivationLocalDate())) {
-
+        if (getActivationDate() != null && DateUtils.isAfter(getReopenedDate(), getActivationDate())) {
             final String defaultUserMessage = "reopened date cannot be after the submittedon date";
             final ApiParameterError error = ApiParameterError.parameterError("error.msg.clients.submittedOnDate.after.reopened.date",
                     defaultUserMessage, ClientApiConstants.reopenedDateParamName, this.reopenedDate);
 
             dataValidationErrors.add(error);
         }
-
-        if (getActivationLocalDate() != null && isDateInTheFuture(getActivationLocalDate())) {
-
+        if (DateUtils.isDateInTheFuture(getActivationDate())) {
             final String defaultUserMessage = "Activation date cannot be in the future.";
             final ApiParameterError error = ApiParameterError.parameterError("error.msg.clients.activationDate.in.the.future",
-                    defaultUserMessage, ClientApiConstants.activationDateParamName, getActivationLocalDate());
+                    defaultUserMessage, ClientApiConstants.activationDateParamName, getActivationDate());
 
             dataValidationErrors.add(error);
         }
-
-        if (getActivationLocalDate() != null) {
-            if (this.office.isOpeningDateAfter(getActivationLocalDate())) {
+        if (getActivationDate() != null) {
+            if (this.office.isOpeningDateAfter(getActivationDate())) {
                 final String defaultUserMessage = "Client activation date cannot be a date before the office opening date.";
                 final ApiParameterError error = ApiParameterError.parameterError(
                         "error.msg.clients.activationDate.cannot.be.before.office.activation.date", defaultUserMessage,
-                        ClientApiConstants.activationDateParamName, getActivationLocalDate());
+                        ClientApiConstants.activationDateParamName, getActivationDate());
                 dataValidationErrors.add(error);
             }
         }
     }
 
     public void deriveDisplayName() {
-
-        StringBuilder nameBuilder = new StringBuilder();
-        Integer legalForm = this.getLegalForm();
-        if (legalForm == null || LegalForm.fromInt(legalForm).isPerson()) {
-            if (StringUtils.isNotBlank(this.firstname)) {
-                nameBuilder.append(this.firstname).append(' ');
+        if (StringUtils.isNotBlank(this.fullname)) {
+            this.displayName = this.fullname;
+        } else {
+            StringBuilder nameBuilder = new StringBuilder();
+            if (legalForm == null || LegalForm.fromInt(legalForm).isPerson()) {
+                if (StringUtils.isNotBlank(this.firstname)) {
+                    nameBuilder.append(this.firstname);
+                }
+                if (StringUtils.isNotBlank(this.middlename)) {
+                    if (!nameBuilder.isEmpty()) {
+                        nameBuilder.append(' ');
+                    }
+                    nameBuilder.append(this.middlename);
+                }
+                if (StringUtils.isNotBlank(this.lastname)) {
+                    if (!nameBuilder.isEmpty()) {
+                        nameBuilder.append(' ');
+                    }
+                    nameBuilder.append(this.lastname);
+                }
             }
-
-            if (StringUtils.isNotBlank(this.middlename)) {
-                nameBuilder.append(this.middlename).append(' ');
-            }
-
-            if (StringUtils.isNotBlank(this.lastname)) {
-                nameBuilder.append(this.lastname);
-            }
-
-            if (StringUtils.isNotBlank(this.fullname)) {
-                nameBuilder = new StringBuilder(this.fullname);
-            }
-        } else if (LegalForm.fromInt(legalForm).isEntity()) {
-            if (StringUtils.isNotBlank(this.fullname)) {
-                nameBuilder = new StringBuilder(this.fullname);
-            }
+            this.displayName = nameBuilder.toString();
         }
-
-        this.displayName = nameBuilder.toString();
-    }
-
-    public LocalDate getActivationLocalDate() {
-        return this.activationDate;
-    }
-
-    public LocalDate getOfficeJoiningLocalDate() {
-        return this.officeJoiningDate;
     }
 
     public boolean isOfficeIdentifiedBy(final Long officeId) {
@@ -621,7 +597,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isActivatedAfter(final LocalDate submittedOn) {
-        return getActivationLocalDate().isAfter(submittedOn);
+        return DateUtils.isAfter(getActivationDate(), submittedOn);
     }
 
     public boolean isChildOfGroup(final Long groupId) {

@@ -2655,8 +2655,7 @@ public class ClientSavingsIntegrationTest {
         this.savingsAccountHelper.addChargesForSavings(savingsId, chargeIdOne, false, BigDecimal.valueOf(withdrawalChargeOne));
 
         Integer withdrawTransactionIdOne = (Integer) this.savingsAccountHelper.withdrawalFromSavingsAccountWithPaymentType(savingsId,
-                withdrawalAmountOne, SavingsAccountHelper.TRANSACTION_DATE, paymentTypeIdOne.toString(),
-                CommonConstants.RESPONSE_RESOURCE_ID);
+                withdrawalAmountOne, SavingsAccountHelper.TRANSACTION_DATE, paymentTypeIdOne, CommonConstants.RESPONSE_RESOURCE_ID);
 
         Float balance = Float.parseFloat("8990");
         // Withdraw charge from paymentType 1 is 10 So balance should be 10,000(deposit)-1000(wd)-"10(charge)" = 8990
@@ -2678,8 +2677,7 @@ public class ClientSavingsIntegrationTest {
         this.savingsAccountHelper.addChargesForSavings(savingsId, chargeIdTwo, false, BigDecimal.valueOf(withdrawalChargeTwo));
 
         Integer withdrawTransactionIdTwo = (Integer) this.savingsAccountHelper.withdrawalFromSavingsAccountWithPaymentType(savingsId,
-                withdrawalAmountTwo, SavingsAccountHelper.TRANSACTION_DATE, paymentTypeIdTwo.toString(),
-                CommonConstants.RESPONSE_RESOURCE_ID);
+                withdrawalAmountTwo, SavingsAccountHelper.TRANSACTION_DATE, paymentTypeIdTwo, CommonConstants.RESPONSE_RESOURCE_ID);
 
         Float balanceAfterChargeTwo = Float.parseFloat("6970");
         // Withdraw charge from paymentType 2 is 20 So balance should be 8990(balance)-2000(wd)-"20(charge)" = 6970
@@ -3010,7 +3008,7 @@ public class ClientSavingsIntegrationTest {
         this.savingsProductHelper = new SavingsProductHelper();
         this.scheduleJobHelper = new SchedulerJobHelper(requestSpec);
         configurationForBackdatedTransaction();
-        LocalDate transactionDate = LocalDate.now(Utils.getZoneIdOfTenant()).minusDays(5);
+        LocalDate transactionDate = Utils.getLocalDateOfTenant().minusDays(5);
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
         String startDate = formatter.format(transactionDate);
         String secondTrx = formatter.format(transactionDate.plusDays(1));

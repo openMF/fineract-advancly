@@ -459,20 +459,16 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Transactional
     @Override
     public void deregisterDatatable(final String datatable) {
-        String validatedDatatable = this.preventSqlInjectionService.encodeSql(datatable);
-        final String permissionList = "('CREATE_" + validatedDatatable + "', 'CREATE_" + validatedDatatable + "_CHECKER', 'READ_"
-                + validatedDatatable + "', 'UPDATE_" + validatedDatatable + "', 'UPDATE_" + validatedDatatable + "_CHECKER', 'DELETE_"
-                + validatedDatatable + "', 'DELETE_" + validatedDatatable + "_CHECKER')";
+        validateDatatableRegistered(datatable);
+        final String permissionList = "('CREATE_" + datatable + "', 'CREATE_" + datatable + "_CHECKER', 'READ_" + datatable + "', 'UPDATE_"
+                + datatable + "', 'UPDATE_" + datatable + "_CHECKER', 'DELETE_" + datatable + "', 'DELETE_" + datatable + "_CHECKER')";
 
         final String deleteRolePermissionsSql = "delete from m_role_permission where m_role_permission.permission_id in (select id from m_permission where code in "
                 + permissionList + ")";
 
         final String deletePermissionsSql = "delete from m_permission where code in " + permissionList;
-
-        final String deleteRegisteredDatatableSql = "delete from x_registered_table where registered_table_name = '" + validatedDatatable
-                + "'";
-
-        final String deleteFromConfigurationSql = "delete from c_configuration where name ='" + validatedDatatable + "'";
+        final String deleteRegisteredDatatableSql = "delete from x_registered_table where registered_table_name = '" + datatable + "'";
+        final String deleteFromConfigurationSql = "delete from c_configuration where name ='" + datatable + "'";
 
         String[] sqlArray = new String[4];
         sqlArray[0] = deleteRolePermissionsSql;
@@ -1250,7 +1246,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     public void deleteDatatable(final String datatableName) {
         try {
             this.context.authenticatedUser();
-            validateDatatableRegistered(datatableName);
+            validateDatatableName(datatableName);
             assertDataTableEmpty(datatableName);
             deregisterDatatable(datatableName);
             String[] sqlArray;
@@ -1327,7 +1323,6 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             params.add(SearchUtil.parseJdbcColumnValue(columnHeader, dataParams.get(key), dateFormat, dateTimeFormat, locale, false,
                     sqlGenerator));
         }
-        final String sql = sqlGenerator.buildInsert(dataTableName, insertColumns);
         if (addScore) {
             List<Object> scoreIds = params.stream().filter(e -> e != null && !String.valueOf(e).isBlank()).toList();
             int scoreValue;
@@ -1343,6 +1338,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             insertColumns.add("score");
             params.add(scoreValue);
         }
+
+        final String sql = sqlGenerator.buildInsert(dataTableName, insertColumns, headersByName);
         try {
             int updated = jdbcTemplate.update(sql, params.toArray(Object[]::new));
             if (updated != 1) {
@@ -1450,8 +1447,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         Locale locale = localeString == null ? null : JsonParserHelper.localeFromString(localeString);
 
         DatabaseType dialect = sqlGenerator.getDialect();
-        List<String> updateColumns = new ArrayList<>(List.of(UPDATEDAT_FIELD_NAME));
-        List<Object> params = new ArrayList<>(List.of(DateUtils.getAuditLocalDateTime()));
+        ArrayList<String> updateColumns = new ArrayList<>(List.of(UPDATEDAT_FIELD_NAME));
+        ArrayList<Object> params = new ArrayList<>(List.of(DateUtils.getAuditLocalDateTime()));
         final HashMap<String, Object> changes = new HashMap<>();
         for (String key : dataParams.keySet()) {
             if (isTechnicalParam(key)) {
@@ -1478,7 +1475,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         if (!updateColumns.isEmpty()) {
             ResultsetColumnHeaderData pkColumn = SearchUtil.getFiltered(columnHeaders, ResultsetColumnHeaderData::getIsColumnPrimaryKey);
             params.add(primaryKey);
-            final String sql = sqlGenerator.buildUpdate(dataTableName, updateColumns) + " WHERE " + pkColumn.getColumnName() + " = ?";
+            final String sql = sqlGenerator.buildUpdate(dataTableName, updateColumns, headersByName) + " WHERE " + pkColumn.getColumnName()
+                    + " = ?";
             int updated = jdbcTemplate.update(sql, params.toArray(Object[]::new));
             if (updated != 1) {
                 throw new PlatformDataIntegrityException("error.msg.invalid.update", "Expected one updated row.");
@@ -1587,13 +1585,13 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         if (!rs.next()) {
             throw new DatatableNotFoundException(entityTable, appTableId);
         }
-        final Long officeId = rs.getLong("officeId");
-        final Long groupId = rs.getLong("groupId");
-        final Long clientId = rs.getLong("clientId");
-        final Long savingsId = rs.getLong("savingsId");
-        final Long loanId = rs.getLong("loanId");
-        final Long transactionId = rs.getLong("transactionId");
-        final Long entityId = rs.getLong("entityId");
+        final Long officeId = (Long) rs.getObject("officeId");
+        final Long groupId = (Long) rs.getObject("groupId");
+        final Long clientId = (Long) rs.getObject("clientId");
+        final Long savingsId = (Long) rs.getObject("savingsId");
+        final Long loanId = (Long) rs.getObject("loanId");
+        final Long transactionId = (Long) rs.getObject("transactionId");
+        final Long entityId = (Long) rs.getObject("entityId");
 
         if (rs.next()) {
             throw new DatatableSystemErrorException("System Error: More than one row returned from data scoping query");
@@ -1604,7 +1602,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 .withGroupId(groupId) //
                 .withClientId(clientId) //
                 .withSavingsId(savingsId) //
-                .withLoanId(loanId).withTransactionId(String.valueOf(transactionId)).withEntityId(entityId)//
+                .withLoanId(loanId).withTransactionId(transactionId == null ? null : String.valueOf(transactionId)).withEntityId(entityId)//
                 .build();
     }
 
@@ -1657,7 +1655,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     }
 
     private String getGroupOfficeJoinCondition(String officeHierarchy, String appTableAlias) {
-        return " join m_group g on g.id = " + appTableAlias + ".client_id " + getOfficeJoinCondition(officeHierarchy, "g");
+        return " join m_group g on g.id = " + appTableAlias + ".group_id " + getOfficeJoinCondition(officeHierarchy, "g");
     }
 
     private String getOfficeJoinCondition(String officeHierarchy, String joinTableAlias) {

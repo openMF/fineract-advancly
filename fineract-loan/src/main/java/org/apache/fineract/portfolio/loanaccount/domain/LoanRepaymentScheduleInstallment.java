@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
@@ -418,6 +419,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.penaltyAccrued = null;
     }
 
+    public void resetChargesCharged() {
+        this.feeChargesCharged = null;
+        this.penaltyCharges = null;
+    }
+
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
@@ -625,7 +631,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public boolean isOverdueOn(final LocalDate date) {
-        return getDueDate().isBefore(date);
+        return DateUtils.isAfter(date, getDueDate());
     }
 
     public void updateChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
@@ -636,6 +642,17 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.penaltyCharges = defaultToNullIfZero(penaltyChargesDue.getAmount());
         this.penaltyChargesWaived = defaultToNullIfZero(penaltyChargesWaived.getAmount());
         this.penaltyChargesWrittenOff = defaultToNullIfZero(penaltyChargesWrittenOff.getAmount());
+    }
+
+    public void addToChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
+            final Money penaltyChargesDue, final Money penaltyChargesWaived, final Money penaltyChargesWrittenOff) {
+        this.feeChargesCharged = defaultToNullIfZero(feeChargesDue.plus(this.feeChargesCharged).getAmount());
+        this.feeChargesWaived = defaultToNullIfZero(feeChargesWaived.plus(this.feeChargesWaived).getAmount());
+        this.feeChargesWrittenOff = defaultToNullIfZero(feeChargesWrittenOff.plus(this.feeChargesWrittenOff).getAmount());
+        this.penaltyCharges = defaultToNullIfZero(penaltyChargesDue.plus(this.penaltyCharges).getAmount());
+        this.penaltyChargesWaived = defaultToNullIfZero(penaltyChargesWaived.plus(this.penaltyChargesWaived).getAmount());
+        this.penaltyChargesWrittenOff = defaultToNullIfZero(penaltyChargesWrittenOff.plus(this.penaltyChargesWrittenOff).getAmount());
+        checkIfRepaymentPeriodObligationsAreMet(getObligationsMetOnDate(), feeChargesDue.getCurrency());
     }
 
     public void updateAccrualPortion(final Money interest, final Money feeCharges, final Money penalityCharges) {
@@ -665,11 +682,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     private boolean isInAdvance(final LocalDate transactionDate) {
-        return transactionDate.isBefore(getDueDate());
+        return DateUtils.isBefore(transactionDate, getDueDate());
     }
 
     private boolean isLatePayment(final LocalDate transactionDate) {
-        return transactionDate.isAfter(getDueDate());
+        return DateUtils.isAfter(transactionDate, getDueDate());
     }
 
     private void checkIfRepaymentPeriodObligationsAreMet(final LocalDate transactionDate, final MonetaryCurrency currency) {
@@ -928,6 +945,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return (this.installmentNumber == 1);
     }
 
+    public boolean isInPeriod(LocalDate date) {
+        return (isFirstPeriod() ? !DateUtils.isBefore(date, getFromDate()) : DateUtils.isAfter(date, getFromDate()))
+                && !DateUtils.isAfter(date, getDueDate());
+    }
+
     public Set<LoanTransactionToRepaymentScheduleMapping> getLoanTransactionToRepaymentScheduleMappings() {
         return this.loanTransactionToRepaymentScheduleMappings;
     }
@@ -936,4 +958,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return isDownPayment;
     }
 
+    public void resetBalances() {
+        resetDerivedComponents();
+        resetPrincipalDue();
+        resetChargesCharged();
+    }
+
+    public void resetPrincipalDue() {
+        this.principal = null;
+    }
 }

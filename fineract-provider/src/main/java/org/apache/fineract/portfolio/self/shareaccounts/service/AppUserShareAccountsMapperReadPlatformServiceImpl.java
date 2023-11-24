@@ -19,19 +19,13 @@
 
 package org.apache.fineract.portfolio.self.shareaccounts.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
 
-@Service
+@RequiredArgsConstructor
 public class AppUserShareAccountsMapperReadPlatformServiceImpl implements AppUserShareAccountsMapperReadPlatformService {
 
     private final JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    public AppUserShareAccountsMapperReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     public Boolean isShareAccountsMappedToUser(Long accountId, Long appUserId) {

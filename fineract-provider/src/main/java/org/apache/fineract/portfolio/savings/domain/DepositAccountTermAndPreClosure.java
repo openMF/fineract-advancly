@@ -42,6 +42,7 @@ import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.savings.DepositAccountOnClosureType;
 import org.apache.fineract.portfolio.savings.SavingsPeriodFrequencyType;
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
@@ -223,7 +224,7 @@ public class DepositAccountTermAndPreClosure extends AbstractPersistableCustom {
         this.depositAmount = depositAmount;
     }
 
-    public LocalDate getMaturityLocalDate() {
+    public LocalDate getMaturityDate() {
         return this.maturityDate;
     }
 
@@ -246,7 +247,7 @@ public class DepositAccountTermAndPreClosure extends AbstractPersistableCustom {
         }
 
         Integer actualDepositPeriod = this.depositPeriod;
-        if (depositFromDate == null || getMaturityLocalDate() == null || interestPostingUpToDate.isEqual(getMaturityLocalDate())) {
+        if (depositFromDate == null || getMaturityDate() == null || DateUtils.isEqual(interestPostingUpToDate, getMaturityDate())) {
             return actualDepositPeriod;
         }
 
@@ -315,11 +316,7 @@ public class DepositAccountTermAndPreClosure extends AbstractPersistableCustom {
     }
 
     public boolean isAfterExpectedFirstDepositDate(final LocalDate compareDate) {
-        boolean isAfterExpectedFirstDepositDate = false;
-        if (this.expectedFirstDepositOnDate != null) {
-            isAfterExpectedFirstDepositDate = compareDate.isAfter(getExpectedFirstDepositOnDate());
-        }
-        return isAfterExpectedFirstDepositDate;
+        return this.expectedFirstDepositOnDate != null && DateUtils.isAfter(compareDate, getExpectedFirstDepositOnDate());
     }
 
     public Integer getOnAccountClosureType() {

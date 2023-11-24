@@ -41,6 +41,7 @@ import org.apache.fineract.client.models.PostLoansLoanIdTransactionsResponse;
 import org.apache.fineract.client.models.PutLoanProductsProductIdRequest;
 import org.apache.fineract.client.models.PutLoanProductsProductIdResponse;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.integrationtests.common.BusinessDateHelper;
 import org.apache.fineract.integrationtests.common.ClientHelper;
 import org.apache.fineract.integrationtests.common.CommonConstants;
@@ -311,7 +312,7 @@ public class LoanProductWithDownPaymentConfigurationTest {
         try {
 
             // Set business date
-            LocalDate disbursementDate = LocalDate.of(2023, 03, 3);
+            LocalDate disbursementDate = LocalDate.of(2023, 3, 3);
 
             GlobalConfigurationHelper.updateIsBusinessDateEnabled(requestSpec, responseSpec, Boolean.TRUE);
             BusinessDateHelper.updateBusinessDate(requestSpec, responseSpec, BusinessDateType.BUSINESS_DATE, disbursementDate);
@@ -364,6 +365,7 @@ public class LoanProductWithDownPaymentConfigurationTest {
             // first disbursement
             loanTransactionHelper.disburseLoanWithTransactionAmount("03 March 2023", loanId, "1000");
 
+            loanDetails = loanTransactionHelper.getLoanDetails(loanId.longValue());
             // verify down-payment transaction created
             checkDownPaymentTransaction(disbursementDate, 250.0f, 0.0f, 0.0f, 0.0f, loanId);
 
@@ -373,12 +375,44 @@ public class LoanProductWithDownPaymentConfigurationTest {
             this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, "03 March 2023",
                     new JournalEntry(250, JournalEntry.TransactionType.DEBIT));
 
+            // verify installment details
+            assertEquals(LocalDate.of(2023, 3, 3), loanDetails.getRepaymentSchedule().getPeriods().get(0).getDueDate());
+            assertEquals(1000.0, loanDetails.getRepaymentSchedule().getPeriods().get(0).getPrincipalLoanBalanceOutstanding());
+            assertEquals(1, loanDetails.getRepaymentSchedule().getPeriods().get(1).getPeriod());
+            assertEquals(LocalDate.of(2023, 3, 3), loanDetails.getRepaymentSchedule().getPeriods().get(1).getDueDate());
+            assertEquals(250.0, loanDetails.getRepaymentSchedule().getPeriods().get(1).getTotalInstallmentAmountForPeriod());
+            assertEquals(true, loanDetails.getRepaymentSchedule().getPeriods().get(1).getDownPaymentPeriod());
+            assertEquals(2, loanDetails.getRepaymentSchedule().getPeriods().get(2).getPeriod());
+            assertEquals(LocalDate.of(2023, 4, 2), loanDetails.getRepaymentSchedule().getPeriods().get(2).getDueDate());
+            assertEquals(750.0, loanDetails.getRepaymentSchedule().getPeriods().get(2).getTotalInstallmentAmountForPeriod());
+            assertEquals(false, loanDetails.getRepaymentSchedule().getPeriods().get(2).getDownPaymentPeriod());
+
             // second disbursement
 
-            disbursementDate = LocalDate.of(2023, 03, 5);
+            disbursementDate = LocalDate.of(2023, 3, 5);
             BusinessDateHelper.updateBusinessDate(requestSpec, responseSpec, BusinessDateType.BUSINESS_DATE, disbursementDate);
             loanTransactionHelper.disburseLoanWithTransactionAmount("05 March 2023", loanId, "200");
             checkDownPaymentTransaction(disbursementDate, 50.0f, 0.0f, 0.0f, 0.0f, loanId);
+
+            loanDetails = loanTransactionHelper.getLoanDetails(loanId.longValue());
+            // verify installment details
+            assertEquals(LocalDate.of(2023, 3, 3), loanDetails.getRepaymentSchedule().getPeriods().get(0).getDueDate());
+            assertEquals(1000.0, loanDetails.getRepaymentSchedule().getPeriods().get(0).getPrincipalLoanBalanceOutstanding());
+            assertEquals(1, loanDetails.getRepaymentSchedule().getPeriods().get(1).getPeriod());
+            assertEquals(LocalDate.of(2023, 3, 3), loanDetails.getRepaymentSchedule().getPeriods().get(1).getDueDate());
+            assertEquals(250.0, loanDetails.getRepaymentSchedule().getPeriods().get(1).getTotalInstallmentAmountForPeriod());
+            assertEquals(true, loanDetails.getRepaymentSchedule().getPeriods().get(1).getDownPaymentPeriod());
+            assertEquals(LocalDate.of(2023, 3, 5), loanDetails.getRepaymentSchedule().getPeriods().get(2).getDueDate());
+            assertEquals(200.0, loanDetails.getRepaymentSchedule().getPeriods().get(2).getPrincipalLoanBalanceOutstanding());
+            assertEquals(false, loanDetails.getRepaymentSchedule().getPeriods().get(2).getDownPaymentPeriod());
+            assertEquals(2, loanDetails.getRepaymentSchedule().getPeriods().get(3).getPeriod());
+            assertEquals(LocalDate.of(2023, 3, 5), loanDetails.getRepaymentSchedule().getPeriods().get(3).getDueDate());
+            assertEquals(50.0, loanDetails.getRepaymentSchedule().getPeriods().get(3).getTotalInstallmentAmountForPeriod());
+            assertEquals(true, loanDetails.getRepaymentSchedule().getPeriods().get(3).getDownPaymentPeriod());
+            assertEquals(3, loanDetails.getRepaymentSchedule().getPeriods().get(4).getPeriod());
+            assertEquals(LocalDate.of(2023, 4, 2), loanDetails.getRepaymentSchedule().getPeriods().get(4).getDueDate());
+            assertEquals(900.0, loanDetails.getRepaymentSchedule().getPeriods().get(4).getTotalInstallmentAmountForPeriod());
+            assertEquals(false, loanDetails.getRepaymentSchedule().getPeriods().get(4).getDownPaymentPeriod());
 
             // verify journal entries for down-payment
             this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, "05 March 2023",
@@ -397,7 +431,7 @@ public class LoanProductWithDownPaymentConfigurationTest {
         try {
 
             // Set business date
-            LocalDate disbursementDate = LocalDate.of(2023, 03, 3);
+            LocalDate disbursementDate = LocalDate.of(2023, 3, 3);
 
             GlobalConfigurationHelper.updateIsBusinessDateEnabled(requestSpec, responseSpec, Boolean.TRUE);
             BusinessDateHelper.updateBusinessDate(requestSpec, responseSpec, BusinessDateType.BUSINESS_DATE, disbursementDate);
@@ -572,7 +606,7 @@ public class LoanProductWithDownPaymentConfigurationTest {
                 LocalDate downPaymentEntryDate = LocalDate.of(downPaymentDateAsArray.get(0), downPaymentDateAsArray.get(1),
                         downPaymentDateAsArray.get(2));
 
-                if (transactionDate.isEqual(downPaymentEntryDate)) {
+                if (DateUtils.isEqual(transactionDate, downPaymentEntryDate)) {
                     isTransactionFound = true;
                     assertEquals(principalPortion, Float.valueOf(String.valueOf(transactions.get(i).get("principalPortion"))),
                             "Mismatch in transaction amounts");

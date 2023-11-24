@@ -56,13 +56,13 @@ public class AccrualAccountingApiResource {
     @Operation(summary = "Executes Periodic Accrual Accounting", method = "POST", description = "Mandatory Fields\n" + "\n" + "tillDate\n")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = AccrualAccountingApiResourceSwagger.PostRunaccrualsRequest.class)))
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
-    public String executePeriodicAccrualAccounting(@QueryParam("product") @Parameter(description = "product") final String productParam, 
-        @Parameter(hidden = true) final String jsonRequestBody) {
+    public String executePeriodicAccrualAccounting(@QueryParam("product") @Parameter(description = "product") final String productParam,
+            @Parameter(hidden = true) final String jsonRequestBody) {
 
         CommandWrapper commandRequest = null;
         if (productParam == null || CommandParameterUtil.is(productParam, "loans")) {
             commandRequest = new CommandWrapperBuilder().excuteAccrualAccounting().withJson(jsonRequestBody).build();
-        } else if (CommandParameterUtil.is(productParam, "savings"))  {
+        } else if (CommandParameterUtil.is(productParam, "savings")) {
             commandRequest = new CommandWrapperBuilder().excuteAccrualAccountingForSavings().withJson(jsonRequestBody).build();
         }
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

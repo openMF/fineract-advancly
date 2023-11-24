@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.delinquency.service;
 
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanDelinquencyData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
 public interface LoanDelinquencyDomainService {
@@ -30,5 +31,7 @@ public interface LoanDelinquencyDomainService {
      * @param loan
      */
     CollectionData getOverdueCollectionData(Loan loan);
+
+    LoanDelinquencyData getLoanDelinquencyData(Loan loan);
 
 }

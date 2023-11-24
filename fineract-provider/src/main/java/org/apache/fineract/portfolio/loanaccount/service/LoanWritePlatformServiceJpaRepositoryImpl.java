@@ -40,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.batch.exception.ErrorHandler;
 import org.apache.fineract.cob.exceptions.LoanAccountLockCannotBeOverruledException;
 import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -81,6 +82,8 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanDisbursalTransactionBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionDownPaymentPostBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionDownPaymentPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoChargeOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
@@ -193,12 +196,9 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
 @Slf4j
 @RequiredArgsConstructor
 public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatformService {
@@ -247,7 +247,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ExternalIdFactory externalIdFactory;
     private final ReplayedTransactionBusinessEventService replayedTransactionBusinessEventService;
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
-    private final JdbcTemplate jdbcTemplate;
+    private final ErrorHandler errorHandler;
 
     @Transactional
     @Override
@@ -291,7 +291,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         final LocalDate actualDisbursementDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
 
-        if (loan.isChargedOff() && actualDisbursementDate.isBefore(loan.getChargedOffOnDate())) {
+        if (loan.isChargedOff() && DateUtils.isBefore(actualDisbursementDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loanId
                     + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
@@ -405,7 +405,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Loan to be closed with this topup is not active.");
                 }
                 final LocalDate lastUserTransactionOnLoanToClose = loanToClose.getLastUserTransactionDate();
-                if (loan.getDisbursementDate().isBefore(lastUserTransactionOnLoanToClose)) {
+                if (DateUtils.isBefore(loan.getDisbursementDate(), lastUserTransactionOnLoanToClose)) {
                     throw new GeneralPlatformDomainRuleException(
                             "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed",
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
@@ -436,6 +436,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         actualDisbursementDate, txnExternalId);
                 disbursementTransaction.updateLoan(loan);
                 loan.addLoanTransaction(disbursementTransaction);
+                LoanTransaction savedLoanTransaction = loanTransactionRepository.saveAndFlush(disbursementTransaction);
             }
             if (loan.getRepaymentScheduleInstallments().isEmpty()) {
                 /*
@@ -456,7 +457,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, null, downPaymentEnabled);
             }
             loan.adjustNetDisbursalAmount(amountToDisburse.getAmount());
-            loan.handleDownPayment(amountToDisburse.getAmount(), command, scheduleGeneratorDTO);
+            if (loan.isAutoRepaymentForDownPaymentEnabled()) {
+                businessEventNotifierService.notifyPreBusinessEvent(new LoanTransactionDownPaymentPreBusinessEvent(loan));
+                LoanTransaction downPaymentTransaction = loan.handleDownPayment(amountToDisburse.getAmount(), command,
+                        scheduleGeneratorDTO);
+                LoanTransaction savedLoanTransaction = loanTransactionRepository.saveAndFlush(downPaymentTransaction);
+                businessEventNotifierService.notifyPostBusinessEvent(new LoanTransactionDownPaymentPostBusinessEvent(savedLoanTransaction));
+                businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
+            }
         }
         if (!changes.isEmpty()) {
             if (changedTransactionDetail != null) {
@@ -1123,7 +1131,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate recalculateFrom = null;
 
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
-            recalculateFrom = transactionToAdjust.getTransactionDate().isAfter(transactionDate) ? transactionDate
+            recalculateFrom = DateUtils.isAfter(transactionToAdjust.getTransactionDate(), transactionDate) ? transactionDate
                     : transactionToAdjust.getTransactionDate();
         }
 
@@ -1141,11 +1149,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.loanTransactionRepository.saveAndFlush(newTransactionDetail);
         }
 
-        /***
+        /*
          * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
          * time being, not a major issue for now as this loop is entered only in edge cases (when a adjustment is made
          * before the latest payment recorded against the loan)
-         ***/
+         */
         if (changedTransactionDetail != null) {
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
@@ -1438,7 +1446,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         checkClientOrGroupActive(loan);
-        if (loan.isChargedOff() && transactionDate.isBefore(loan.getChargedOffOnDate())) {
+        if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loanId
                     + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
@@ -1504,7 +1512,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
         LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
-        if (loan.isChargedOff() && transactionDate.isBefore(loan.getChargedOffOnDate())) {
+        if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loanId
                     + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
@@ -2426,13 +2434,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @SuppressWarnings("unused")
     private void fallbackRecalculateInterest(Throwable t) {
         // NOTE: allow caller to catch the exceptions
-
-        if (t instanceof RuntimeException re) {
-            throw re;
-        }
-
         // NOTE: wrap throwable only if really necessary
-        throw new RuntimeException(t);
+        throw errorHandler.getMappable(t, null, null, "loan.recalculateinterest");
     }
 
     @Override
@@ -2595,8 +2598,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private void checkIfLoanIsPaidInAdvance(final Long loanId, final BigDecimal transactionAmount) {
         BigDecimal overpaid = this.loanReadPlatformService.retrieveTotalPaidInAdvance(loanId).getPaidInAdvance();
 
-        if (overpaid == null || overpaid.compareTo(BigDecimal.ZERO) == 0 ? Boolean.TRUE
-                : Boolean.FALSE || transactionAmount.floatValue() > overpaid.floatValue()) {
+        if (overpaid == null || overpaid.compareTo(BigDecimal.ZERO) == 0 || transactionAmount.floatValue() > overpaid.floatValue()) {
             if (overpaid == null) {
                 overpaid = BigDecimal.ZERO;
             }
@@ -2682,7 +2684,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         String noteText = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.noteParamName, element);
         LoanRescheduleRequest loanRescheduleRequest = null;
         for (LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
-            if (!loanDisbursementDetails.expectedDisbursementDateAsLocalDate().isAfter(transactionDate)
+            if (!DateUtils.isAfter(loanDisbursementDetails.expectedDisbursementDateAsLocalDate(), transactionDate)
                     && loanDisbursementDetails.actualDisbursementDate() == null) {
                 final String defaultUserMessage = "The loan with undisbursed tranche before foreclosure cannot be foreclosed.";
                 throw new LoanForeclosureException("loan.with.undisbursed.tranche.before.foreclosure.cannot.be.foreclosured",
@@ -2729,12 +2731,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException("error.msg.loan.is.already.charged.off",
                     "Loan: " + loanId + " is already charged-off", loanId);
         }
-        if (transactionDate.isBefore(loan.getLastUserTransactionDate())) {
+        if (DateUtils.isBefore(transactionDate, loan.getLastUserTransactionDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.off.is.before.than.the.last.user.transaction",
                     "Loan: " + loanId + " charge-off cannot be executed. User transaction was found after the charge-off transaction date!",
                     loanId);
         }
-        if (transactionDate.isAfter(DateUtils.getBusinessLocalDate())) {
+        if (DateUtils.isDateInTheFuture(transactionDate)) {
             final String errorMessage = "The transaction date cannot be in the future.";
             throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.cannot.be.a.future.date", errorMessage,
                     transactionDate);
@@ -2845,27 +2847,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String errorMessage = "tranches.should.be.disbursed.more.than.one.to.undo.last.disbursal";
             throw new LoanMultiDisbursementException(errorMessage);
         }
-
     }
 
     private void syncExpectedDateWithActualDisbursementDate(final Loan loan, LocalDate actualDisbursementDate) {
         if (!loan.getExpectedDisbursedOnLocalDate().equals(actualDisbursementDate)) {
             throw new DateMismatchException(actualDisbursementDate, loan.getExpectedDisbursedOnLocalDate());
         }
-
     }
 
     private void validateTransactionsForTransfer(final Loan loan, final LocalDate transferDate) {
-
         for (LoanTransaction transaction : loan.getLoanTransactions()) {
-            if ((transaction.getTransactionDate().isEqual(transferDate) && transaction.getSubmittedOnDate().isEqual(transferDate))
-                    || transaction.getTransactionDate().isAfter(transferDate)) {
+            if ((DateUtils.isEqual(transferDate, transaction.getTransactionDate())
+                    && DateUtils.isEqual(transferDate, transaction.getSubmittedOnDate()))
+                    || DateUtils.isBefore(transferDate, transaction.getTransactionDate())) {
                 throw new GeneralPlatformDomainRuleException(TransferApiConstants.transferClientLoanException,
                         TransferApiConstants.transferClientLoanExceptionMessage, transaction.getCreatedDateTime().toLocalDate(),
                         transferDate);
             }
-
         }
-
     }
 }

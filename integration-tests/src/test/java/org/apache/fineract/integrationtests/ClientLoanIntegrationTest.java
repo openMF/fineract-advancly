@@ -87,6 +87,7 @@ import org.apache.fineract.client.models.PostLoansResponse;
 import org.apache.fineract.client.models.PutChargeTransactionChangesRequest;
 import org.apache.fineract.client.util.CallFailedRuntimeException;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.integrationtests.common.BusinessDateHelper;
 import org.apache.fineract.integrationtests.common.ClientHelper;
 import org.apache.fineract.integrationtests.common.CollateralManagementHelper;
@@ -127,6 +128,10 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @ExtendWith(LoanTestLifecycleExtension.class)
 public class ClientLoanIntegrationTest {
+
+    static {
+        Utils.initializeRESTAssured();
+    }
 
     private static final String MINIMUM_OPENING_BALANCE = "1000.0";
     private static final String ACCOUNT_TYPE_INDIVIDUAL = "INDIVIDUAL";
@@ -171,10 +176,6 @@ public class ClientLoanIntegrationTest {
     private static final BusinessDateHelper BUSINESS_DATE_HELPER = new BusinessDateHelper();
     private static final ChargesHelper CHARGES_HELPER = new ChargesHelper();
     private static final ClientHelper CLIENT_HELPER = new ClientHelper(REQUEST_SPEC, RESPONSE_SPEC);
-
-    static {
-        Utils.initializeRESTAssured();
-    }
 
     private static RequestSpecification createRequestSpecification() {
         RequestSpecification request = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
@@ -6308,7 +6309,7 @@ public class ClientLoanIntegrationTest {
             LocalDate expectedMaturityDate = loanDetails.getTimeline().getExpectedMaturityDate();
             LocalDate actualMaturityDate = loanDetails.getTimeline().getActualMaturityDate();
 
-            assertTrue(expectedMaturityDate.isEqual(actualMaturityDate));
+            assertTrue(DateUtils.isEqual(expectedMaturityDate, actualMaturityDate));
 
             LOAN_TRANSACTION_HELPER.makeRepayment("04 September 2022", Float.parseFloat("500"), loanID);
             LOAN_TRANSACTION_HELPER.makeRepayment("05 September 2022", Float.parseFloat("700"), loanID);
@@ -6893,7 +6894,7 @@ public class ClientLoanIntegrationTest {
     }
 
     private PostClientsRequest createRandomClientWithDate(String date) {
-        return new PostClientsRequest().officeId(1).legalFormId(1).firstname(Utils.randomStringGenerator("", 5))
+        return new PostClientsRequest().officeId(1L).legalFormId(1L).firstname(Utils.randomStringGenerator("", 5))
                 .lastname(Utils.randomStringGenerator("", 5)).active(true).locale("en").activationDate(date).dateFormat(DATETIME_PATTERN);
     }
 
@@ -8035,7 +8036,7 @@ public class ClientLoanIntegrationTest {
         return SavingsProductHelper.createSavingsProduct(savingsProductJSON, REQUEST_SPEC, RESPONSE_SPEC);
     }
 
-    private PostLoansResponse applyForLoanApplicationForOnePeriod30DaysLongNoInterestPeriodicAccrual(Integer clientId, Long loanProductId,
+    private PostLoansResponse applyForLoanApplicationForOnePeriod30DaysLongNoInterestPeriodicAccrual(Long clientId, Long loanProductId,
             String loanDisbursementDate, String repaymentStrategyCode) {
         return LOAN_TRANSACTION_HELPER.applyLoan(new PostLoansRequest().clientId(clientId.longValue()).productId(loanProductId)
                 .expectedDisbursementDate(loanDisbursementDate).dateFormat(DATETIME_PATTERN)
@@ -8067,7 +8068,7 @@ public class ClientLoanIntegrationTest {
                 .maxInterestRatePerPeriod((double) 0)//
                 .interestRateFrequencyType(2)//
                 .repaymentEvery(30)//
-                .repaymentFrequencyType(0)//
+                .repaymentFrequencyType(0L)//
                 .amortizationType(1)//
                 .interestType(0)//
                 .isEqualAmortization(false)//

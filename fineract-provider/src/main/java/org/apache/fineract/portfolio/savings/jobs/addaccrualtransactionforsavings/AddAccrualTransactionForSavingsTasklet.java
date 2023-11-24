@@ -51,7 +51,8 @@ public class AddAccrualTransactionForSavingsTasklet implements Tasklet {
             } catch (final PlatformApiDataValidationException e) {
                 final List<ApiParameterError> errors = e.getErrors();
                 for (final ApiParameterError error : errors) {
-                    log.error("Add Accrual Transaction failed for account: {} with message {}", savingsAccountReference.getAccountNo(), error);
+                    log.error("Add Accrual Transaction failed for account: {} with message {}", savingsAccountReference.getAccountNo(),
+                            error);
                 }
             } catch (final Exception ex) {
                 log.error("Add Accrual Transaction failed for account: {}", savingsAccountReference.getAccountNo(), ex);

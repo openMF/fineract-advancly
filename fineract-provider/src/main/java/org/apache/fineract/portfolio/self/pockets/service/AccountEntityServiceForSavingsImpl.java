@@ -19,15 +19,14 @@
 
 package org.apache.fineract.portfolio.self.pockets.service;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
 import org.apache.fineract.portfolio.self.savings.service.AppuserSavingsMapperReadService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-@Service
+@RequiredArgsConstructor
 public class AccountEntityServiceForSavingsImpl implements AccountEntityService {
 
     private static final String KEY = EntityAccountType.SAVINGS.name();
@@ -36,17 +35,6 @@ public class AccountEntityServiceForSavingsImpl implements AccountEntityService 
     private final AppuserSavingsMapperReadService appuserSavingsMapperReadService;
     private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
 
-    @Autowired
-    public AccountEntityServiceForSavingsImpl(final PlatformSecurityContext context,
-            final AppuserSavingsMapperReadService appuserSavingsMapperReadService,
-            final SavingsAccountReadPlatformService savingsAccountReadPlatformService) {
-
-        this.context = context;
-        this.appuserSavingsMapperReadService = appuserSavingsMapperReadService;
-        this.savingsAccountReadPlatformService = savingsAccountReadPlatformService;
-
-    }
-
     @Override
     public String getKey() {
         return KEY;
@@ -54,10 +42,8 @@ public class AccountEntityServiceForSavingsImpl implements AccountEntityService 
 
     @Override
     public void validateSelfUserAccountMapping(Long accountId) {
-
-        if (!this.appuserSavingsMapperReadService.isSavingsMappedToUser(accountId, this.context.getAuthenticatedUserIfPresent().getId())) {
+        if (!this.appuserSavingsMapperReadService.isSavingsMappedToUser(accountId, this.context.authenticatedUser().getId())) {
             throw new SavingsAccountNotFoundException(accountId);
-
         }
     }
 

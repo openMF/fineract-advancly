@@ -22,14 +22,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentPastDueData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.springframework.stereotype.Component;
 
-@Component
+@NoArgsConstructor
 public class LoanCalculateRepaymentPastDueService {
 
     public LoanRepaymentPastDueData retrieveLoanRepaymentPastDueAmountTillDate(Loan loan) {
@@ -65,8 +65,7 @@ public class LoanCalculateRepaymentPastDueService {
         List<LoanRepaymentScheduleInstallment> loanRepayments = loan.getRepaymentScheduleInstallments();
         LocalDate currentBusinessDate = DateUtils.getBusinessLocalDate();
         return loanRepayments.stream()
-                .filter((repayment) -> (!repayment.isObligationsMet()
-                        && (repayment.getDueDate().isBefore(currentBusinessDate) || repayment.getDueDate().isEqual(currentBusinessDate))))
+                .filter(repayment -> (!repayment.isObligationsMet() && !DateUtils.isAfter(repayment.getDueDate(), currentBusinessDate)))
                 .collect(Collectors.toList());
     }
 }

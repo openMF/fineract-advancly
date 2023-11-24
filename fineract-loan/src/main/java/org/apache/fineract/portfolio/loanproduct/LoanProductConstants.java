@@ -154,4 +154,9 @@ public interface LoanProductConstants {
     String REPAYMENT_START_DATE_TYPE = "repaymentStartDateType";
     String DISABLE_SCHEDULE_EXTENSION_FOR_DOWN_PAYMENT = "disableScheduleExtensionForDownPayment";
 
+    String ENABLE_INSTALLMENT_LEVEL_DELINQUENCY = "enableInstallmentLevelDelinquency";
+
+    // loan schedule type
+    String LOAN_SCHEDULE_TYPE = "loanScheduleType";
+
 }

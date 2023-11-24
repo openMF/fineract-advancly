@@ -295,6 +295,7 @@ final class SavingsProductsApiResourceSwagger {
             public GetSavingsProductsFeeToIncomeAccountMappingsCharge charge;
             public GetSavingsProductsGlAccount incomeAccount;
         }
+
         static final class GetSavingsProductsCharge {
 
             private GetSavingsProductsCharge() {}
@@ -330,7 +331,7 @@ final class SavingsProductsApiResourceSwagger {
             public GetSavingsProductsPenaltyToIncomeAccountMappingsCharge charge;
             public GetSavingsProductsGlAccount incomeAccount;
         }
-        
+
         @Schema(example = "1")
         public Integer id;
         @Schema(example = "savings product")
@@ -461,7 +462,7 @@ final class SavingsProductsApiResourceSwagger {
                 @Schema(example = "Savings Control")
                 public String name;
                 @Schema(example = "50001")
-                public Integer glCode;
+                public String glCode;
                 @Schema(example = "false")
                 public Boolean disabled;
                 @Schema(example = "true")
@@ -499,7 +500,7 @@ final class SavingsProductsApiResourceSwagger {
                 @Schema(example = "Cash")
                 public String name;
                 @Schema(example = "100001")
-                public Integer glCode;
+                public String glCode;
                 @Schema(example = "false")
                 public Boolean disabled;
                 @Schema(example = "true")
@@ -530,7 +531,7 @@ final class SavingsProductsApiResourceSwagger {
                 @Schema(example = "Write Off Expenses")
                 public String name;
                 @Schema(example = "60001")
-                public Integer glCode;
+                public String glCode;
                 @Schema(example = "false")
                 public Boolean disabled;
                 @Schema(example = "true")
@@ -561,7 +562,7 @@ final class SavingsProductsApiResourceSwagger {
                 @Schema(example = "income from interest")
                 public String name;
                 @Schema(example = "40001")
-                public Integer glCode;
+                public String glCode;
                 @Schema(example = "false")
                 public Boolean disabled;
                 @Schema(example = "true")
