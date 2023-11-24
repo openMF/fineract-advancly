@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -46,8 +47,6 @@ import org.apache.fineract.portfolio.savings.domain.interest.PostingPeriod;
 import org.apache.fineract.portfolio.savings.exception.DepositAccountTransactionNotAllowedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -295,8 +294,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             if (savingsAccountTransaction.isPostInterestCalculationRequired()
                     && account.isBeforeLastPostingPeriod(savingsAccountTransaction.getTransactionDate(), backdatedTxnsAllowedTill)) {
 
-                postInterest(account, mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth,
-                        postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
+                postInterest(account, mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
+                        financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
             } else {
                 account.calculateInterestUsing(mc, today, isInterestTransfer, isSavingsInterestPostingAtCurrentPeriodEnd,
                         financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill, postReversals);
@@ -315,9 +314,10 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     }
 
     @Override
-    public void postInterest(SavingsAccount account, final MathContext mc, final LocalDate interestPostingUpToDate, final boolean isInterestTransfer,
-            final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final Integer financialYearBeginningMonth,
-            final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final boolean postReversals) {
+    public void postInterest(SavingsAccount account, final MathContext mc, final LocalDate interestPostingUpToDate,
+            final boolean isInterestTransfer, final boolean isSavingsInterestPostingAtCurrentPeriodEnd,
+            final Integer financialYearBeginningMonth, final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill,
+            final boolean postReversals) {
         final List<PostingPeriod> postingPeriods = account.calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
                 isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
                 postReversals);
@@ -357,11 +357,12 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                     SavingsAccountTransaction newPostingTransaction;
                     if (interestEarnedToBePostedForPeriod.isGreaterThanOrEqualTo(Money.zero(currency))) {
 
-                        newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(), interestPostingTransactionDate,
-                                interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
+                        newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(),
+                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
                     } else {
-                        newPostingTransaction = SavingsAccountTransaction.overdraftInterest(account, account.office(), interestPostingTransactionDate,
-                                interestEarnedToBePostedForPeriod.negated(), interestPostingPeriod.isUserPosting());
+                        newPostingTransaction = SavingsAccountTransaction.overdraftInterest(account, account.office(),
+                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod.negated(),
+                                interestPostingPeriod.isUserPosting());
                     }
                     if (backdatedTxnsAllowedTill) {
                         account.addTransactionToExisting(newPostingTransaction);
@@ -370,8 +371,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                     }
                     if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
                         SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
-                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
-                                interestPostingPeriod.isUserPosting());
+                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
                         if (backdatedTxnsAllowedTill) {
                             account.addTransactionToExisting(accrualTransaction);
                         } else {

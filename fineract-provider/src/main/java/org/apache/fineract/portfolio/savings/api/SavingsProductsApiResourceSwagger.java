@@ -295,6 +295,7 @@ final class SavingsProductsApiResourceSwagger {
             public GetSavingsProductsFeeToIncomeAccountMappingsCharge charge;
             public GetSavingsProductsGlAccount incomeAccount;
         }
+
         static final class GetSavingsProductsCharge {
 
             private GetSavingsProductsCharge() {}
@@ -330,7 +331,7 @@ final class SavingsProductsApiResourceSwagger {
             public GetSavingsProductsPenaltyToIncomeAccountMappingsCharge charge;
             public GetSavingsProductsGlAccount incomeAccount;
         }
-        
+
         @Schema(example = "1")
         public Integer id;
         @Schema(example = "savings product")
