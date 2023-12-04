@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.delinquency.api.DelinquencyApiResourceSwagger.GetDelinquencyRangesResponse;
 
 /**
@@ -963,9 +964,9 @@ final class LoansApiResourceSwagger {
             private String externalId;
         }
 
-        static final class GetLoansLoanIdCollectionData {
+        static final class GetLoansLoanIdDelinquencySummary {
 
-            private GetLoansLoanIdCollectionData() {}
+            private GetLoansLoanIdDelinquencySummary() {}
 
             @Schema(example = "100.000000")
             public Double availableDisbursementAmount;
@@ -988,6 +989,47 @@ final class LoansApiResourceSwagger {
             public LocalDate lastRepaymentDate;
             @Schema(example = "100.000000")
             public Double lastRepaymentAmount;
+
+            @Schema(description = "List of GetLoansLoanIdDelinquencyPausePeriod")
+            public List<GetLoansLoanIdDelinquencyPausePeriod> delinquencyPausePeriods;
+
+            @Schema(description = "List of GetLoansLoanIdLoanInstallmentLevelDelinquency")
+            public List<GetLoansLoanIdLoanInstallmentLevelDelinquency> installmentLevelDelinquency;
+
+        }
+
+        static final class GetLoansLoanIdDelinquencyPausePeriod {
+
+            @Schema(example = "true")
+            public Boolean active;
+
+            @Schema(example = "[2022, 07, 05]")
+            public LocalDate pausePeriodStart;
+
+            @Schema(example = "[2022, 07, 10]")
+            public LocalDate pausePeriodEnd;
+
+        }
+
+        static final class GetLoansLoanIdLoanInstallmentLevelDelinquency {
+
+            private GetLoansLoanIdLoanInstallmentLevelDelinquency() {}
+
+            @Schema(example = "112")
+            public Long rangeId;
+
+            @Schema(example = "Delinquency Range 3 to 5 days")
+            public String classification;
+
+            @Schema(example = "3")
+            public Integer minimumAgeDays;
+
+            @Schema(example = "5")
+            public Integer maximumAgeDays;
+
+            @Schema(example = "250.0")
+            public BigDecimal delinquentAmount;
+
         }
 
         @Schema(example = "1")
@@ -1061,7 +1103,7 @@ final class LoansApiResourceSwagger {
         @Schema(description = "Set of GetLoansLoanIdDisbursementDetails")
         public Set<GetLoansLoanIdDisbursementDetails> disbursementDetails;
         @Schema(description = "Delinquent data")
-        public GetLoansLoanIdCollectionData delinquent;
+        public GetLoansLoanIdDelinquencySummary delinquent;
         @Schema(description = "Set of charges")
         public List<GetLoansLoanIdLoanChargeData> charges;
         public GetDelinquencyRangesResponse delinquencyRange;
@@ -1086,6 +1128,10 @@ final class LoansApiResourceSwagger {
         public Boolean enableAutoRepaymentForDownPayment;
         @Schema(example = "false")
         public Boolean disableScheduleExtensionForDownPayment;
+        @Schema(example = "CUMULATIVE")
+        public EnumOptionData loanScheduleType;
+        @Schema(example = "HORIZONTAL")
+        public EnumOptionData loanScheduleProcessingType;
     }
 
     @Schema(description = "GetLoansResponse")
@@ -1169,6 +1215,10 @@ final class LoansApiResourceSwagger {
         public Integer graceOnInterestPayment;
         @Schema(example = "1")
         public Integer graceOnArrearsAgeing;
+        @Schema(example = "CUMULATIVE")
+        public String loanScheduleType;
+        @Schema(example = "HORIZONTAL")
+        public String loanScheduleProcessingType;
     }
 
     @Schema(description = "PostLoansResponse")
@@ -1312,6 +1362,10 @@ final class LoansApiResourceSwagger {
         public List<PutLoansLoanIdChanges> charges;
         public List<PutLoansLoanIdCollateral> collateral;
         public List<PutLoansLoanIdDisbursementData> disbursementData;
+        @Schema(example = "CUMULATIVE")
+        public String loanScheduleType;
+        @Schema(example = "HORIZONTAL")
+        public String loanScheduleProcessingType;
 
         static final class PutLoansLoanIdChanges {
 

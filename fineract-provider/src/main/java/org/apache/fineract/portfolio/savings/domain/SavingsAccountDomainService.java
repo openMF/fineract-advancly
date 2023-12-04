@@ -46,9 +46,10 @@ public interface SavingsAccountDomainService {
     SavingsAccountTransaction handleReversal(SavingsAccount account, List<SavingsAccountTransaction> savingsAccountTransactions,
             boolean backdatedTxnsAllowedTill);
 
+    SavingsAccountTransaction handleHold(SavingsAccount account, BigDecimal amount, LocalDate transactionDate, Boolean lienAllowed);
+
     void postInterest(SavingsAccount account, MathContext mc, LocalDate interestPostingUpToDate, boolean isInterestTransfer,
             boolean isSavingsInterestPostingAtCurrentPeriodEnd, Integer financialYearBeginningMonth, LocalDate postInterestOnDate,
             boolean backdatedTxnsAllowedTill, boolean postReversals);
 
-    SavingsAccountTransaction handleHold(SavingsAccount account, BigDecimal amount, LocalDate transactionDate, Boolean lienAllowed);
 }
