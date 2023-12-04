@@ -47,7 +47,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
-@Slf4j
 public class InterestRateChartReadPlatformServiceImpl implements InterestRateChartReadPlatformService {
 
     private final PlatformSecurityContext context;
@@ -97,8 +96,6 @@ public class InterestRateChartReadPlatformServiceImpl implements InterestRateCha
         sql.append("WHEN NOT irc.is_primary_grouping_by_amount then ircd.amount_range_from ");
         sql.append("WHEN NOT irc.is_primary_grouping_by_amount then ircd.amount_range_to ");
         sql.append("END");
-
-        log.info("SQL: {}", sql.toString());
 
         return this.jdbcTemplate.query(
                 con -> con.prepareStatement(sql.toString(), ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE),

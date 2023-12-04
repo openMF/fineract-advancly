@@ -48,11 +48,11 @@ import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
 import org.apache.fineract.batch.domain.Header;
 import org.apache.fineract.batch.exception.BatchReferenceInvalidException;
-import org.apache.fineract.batch.exception.ErrorHandler;
 import org.apache.fineract.batch.exception.ErrorInfo;
 import org.apache.fineract.batch.service.ResolutionHelper.BatchRequestNode;
 import org.apache.fineract.infrastructure.core.domain.BatchRequestContextHolder;
 import org.apache.fineract.infrastructure.core.exception.AbstractIdempotentCommandException;
+import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchCallHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchFilter;
 import org.apache.fineract.infrastructure.core.filters.BatchRequestPreprocessor;
@@ -145,6 +145,8 @@ public class BatchApiServiceImpl implements BatchApiService {
                 } catch (RuntimeException ex) {
                     status.setRollbackOnly();
                     return buildErrorResponses(ex, responseList);
+                } finally {
+                    BatchRequestContextHolder.setEnclosingTransaction(Optional.empty());
                 }
             });
         } catch (TransactionException | NonTransientDataAccessException ex) {
@@ -329,7 +331,7 @@ public class BatchApiServiceImpl implements BatchApiService {
         String body = null;
         Set<Header> headers = new HashSet<>();
         if (ex != null) {
-            ErrorInfo errorInfo = errorHandler.handle(errorHandler.getMappable(ex));
+            ErrorInfo errorInfo = errorHandler.handle(ErrorHandler.getMappable(ex));
             statusCode = errorInfo.getStatusCode();
             body = errorInfo.getMessage();
             headers = Optional.ofNullable(errorInfo.getHeaders()).orElse(new HashSet<>());
@@ -358,7 +360,7 @@ public class BatchApiServiceImpl implements BatchApiService {
         String body = null;
         Set<Header> headers = new HashSet<>();
         if (ex != null) {
-            ErrorInfo errorInfo = errorHandler.handle(errorHandler.getMappable(ex));
+            ErrorInfo errorInfo = errorHandler.handle(ErrorHandler.getMappable(ex));
             statusCode = errorInfo.getStatusCode();
             body = errorInfo.getMessage();
             headers = Optional.ofNullable(errorInfo.getHeaders()).orElse(new HashSet<>());

@@ -37,12 +37,13 @@ import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
-import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
+import org.apache.fineract.portfolio.savings.SavingsApiConstants;
 import org.apache.fineract.portfolio.savings.data.SavingsProductDataValidator;
 import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductAssembler;
@@ -50,11 +51,9 @@ import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.portfolio.tax.domain.TaxGroup;
 import org.springframework.dao.DataAccessException;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class SavingsProductWritePlatformServiceJpaRepositoryImpl implements SavingsProductWritePlatformService {
 
@@ -69,26 +68,29 @@ public class SavingsProductWritePlatformServiceJpaRepositoryImpl implements Savi
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dae) {
-
-        if (realCause.getMessage().contains("sp_unq_name")) {
-
+        String msgCode = "error.msg." + SavingsApiConstants.SAVINGS_PRODUCT_RESOURCE_NAME;
+        String msg = "Unknown data integrity issue with savings product.";
+        String param = null;
+        Object[] msgArgs;
+        Throwable checkEx = realCause == null ? dae : realCause;
+        if (checkEx.getMessage().contains("sp_unq_name")) {
             final String name = command.stringValueOfParameterNamed("name");
-            throw new PlatformDataIntegrityException("error.msg.product.savings.duplicate.name",
-                    "Savings product with name `" + name + "` already exists", "name", name);
-        } else if (realCause.getMessage().contains("sp_unq_short_name")) {
-
+            msgCode += ".duplicate.name";
+            msg = "Savings product with name `" + name + "` already exists";
+            param = "name";
+            msgArgs = new Object[] { name, dae };
+        } else if (checkEx.getMessage().contains("sp_unq_short_name")) {
             final String shortName = command.stringValueOfParameterNamed("shortName");
-            throw new PlatformDataIntegrityException("error.msg.product.savings.duplicate.short.name",
-                    "Savings product with short name `" + shortName + "` already exists", "shortName", shortName);
+            msgCode += ".duplicate.short.name";
+            msg = "Savings product with short name `" + shortName + "` already exists";
+            param = "shortName";
+            msgArgs = new Object[] { shortName, dae };
+        } else {
+            msgCode += ".unknown.data.integrity.issue";
+            msgArgs = new Object[] { dae };
         }
-
-        logAsErrorUnexpectedDataIntegrityException(dae);
-        throw new PlatformDataIntegrityException("error.msg.savingsproduct.unknown.data.integrity.issue",
-                "Unknown data integrity issue with resource.");
-    }
-
-    private void logAsErrorUnexpectedDataIntegrityException(final Exception dae) {
         log.error("Error occured.", dae);
+        throw ErrorHandler.getMappable(dae, msgCode, msg, param, msgArgs);
     }
 
     @Transactional
@@ -119,8 +121,7 @@ public class SavingsProductWritePlatformServiceJpaRepositoryImpl implements Savi
             handleDataIntegrityIssues(command, e.getMostSpecificCause(), e);
             return CommandProcessingResult.empty();
         } catch (final PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(command, throwable, dve);
+            handleDataIntegrityIssues(command, ExceptionUtils.getRootCause(dve.getCause()), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -176,8 +177,7 @@ public class SavingsProductWritePlatformServiceJpaRepositoryImpl implements Savi
             handleDataIntegrityIssues(command, e.getMostSpecificCause(), e);
             return CommandProcessingResult.empty();
         } catch (final PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(command, throwable, dve);
+            handleDataIntegrityIssues(command, ExceptionUtils.getRootCause(dve.getCause()), dve);
             return CommandProcessingResult.empty();
         }
     }
