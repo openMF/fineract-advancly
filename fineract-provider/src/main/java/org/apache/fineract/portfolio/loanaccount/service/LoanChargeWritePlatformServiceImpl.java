@@ -72,6 +72,7 @@ import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatfo
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeAppliedToException;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
@@ -113,6 +114,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationT
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
+import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.AdvancedPaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.exception.InstallmentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactionTypeException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanChargeAdjustmentException;
@@ -182,6 +184,18 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         final Long chargeDefinitionId = command.longValueOfParameterNamed("chargeId");
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinitionId);
 
+        /*
+         * TODO: remove this check once handling for Installment fee charges is implemented for Advanced Payment
+         * strategy
+         */
+        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).isInstalmentFee()
+                && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                        .equals(loan.transactionProcessingStrategy())) {
+            final String errorMessageInstallmentChargeNotSupported = "Charge with identifier " + chargeDefinition.getId()
+                    + " cannot be applied: Installment fee charges are not supported for Advanced payment allocation strategy";
+            throw new ChargeCannotBeAppliedToException("loan", errorMessageInstallmentChargeNotSupported, chargeDefinition.getId());
+        }
+
         if (loan.isDisbursed() && chargeDefinition.isDisbursementCharge()) {
             // validates whether any pending disbursements are available to
             // apply this charge
@@ -245,6 +259,18 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
             this.loanWritePlatformService.updateOriginalSchedule(loan);
         }
+        // [For Adv payment allocation strategy] check if charge due date is earlier than last transaction
+        // date, if yes trigger reprocess else no reprocessing
+        if (AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY.equals(loan.transactionProcessingStrategy())) {
+            LoanTransaction lastPaymentTransaction = loan.getLastPaymentTransaction();
+            if (lastPaymentTransaction != null) {
+                if (loanCharge.getEffectiveDueDate() != null
+                        && DateUtils.isAfter(loanCharge.getEffectiveDueDate(), lastPaymentTransaction.getTransactionDate())) {
+                    reprocessRequired = false;
+                }
+            }
+        }
+
         if (reprocessRequired) {
             ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
             if (changedTransactionDetail != null) {

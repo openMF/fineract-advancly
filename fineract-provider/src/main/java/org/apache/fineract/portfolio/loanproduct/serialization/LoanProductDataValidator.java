@@ -343,8 +343,8 @@ public final class LoanProductDataValidator {
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.DELINQUENCY_BUCKET_PARAM_NAME, element)) {
             final Long delinquencyBucketId = this.fromApiJsonHelper.extractLongNamed(LoanProductConstants.DELINQUENCY_BUCKET_PARAM_NAME,
                     element);
-            baseDataValidator.reset().parameter(LoanProductConstants.DELINQUENCY_BUCKET_PARAM_NAME).value(delinquencyBucketId).notNull()
-                    .integerGreaterThanZero();
+            baseDataValidator.reset().parameter(LoanProductConstants.DELINQUENCY_BUCKET_PARAM_NAME).value(delinquencyBucketId)
+                    .ignoreIfNull().integerGreaterThanZero();
         }
 
         // grace validation
@@ -781,16 +781,27 @@ public final class LoanProductDataValidator {
                     .value(enableInstallmentLevelDelinquency).ignoreIfNull().validateForBooleanValue();
         }
 
-        final String loanScheduleType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_TYPE, element);
-        baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_TYPE).value(loanScheduleType).ignoreIfNull()
-                .isOneOfEnumValues(LoanScheduleType.class);
+        String loanScheduleType = LoanScheduleType.CUMULATIVE.name();
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.LOAN_SCHEDULE_TYPE, element)) {
+            loanScheduleType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_TYPE, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_TYPE).value(loanScheduleType)
+                    .isOneOfEnumValues(LoanScheduleType.class);
+        }
+
+        if (!LoanScheduleType.PROGRESSIVE.equals(LoanScheduleType.valueOf(loanScheduleType))
+                && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                        .equals(transactionProcessingStrategyCode)) {
+            baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE).failWithCode(
+                    "supported.only.for.progressive.loan.schedule.type",
+                    "Progressive repayment schedule processing is only available with `Advanced payment allocation` strategy");
+        }
 
         String loanScheduleProcessingType = LoanScheduleProcessingType.HORIZONTAL.name();
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, element)) {
             loanScheduleProcessingType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE,
                     element);
             baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE).value(loanScheduleProcessingType)
-                    .ignoreIfNull().isOneOfEnumValues(LoanScheduleProcessingType.class);
+                    .isOneOfEnumValues(LoanScheduleProcessingType.class);
 
             if (LoanScheduleProcessingType.VERTICAL.equals(LoanScheduleProcessingType.valueOf(loanScheduleProcessingType))
                     && !AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
@@ -1784,10 +1795,19 @@ public final class LoanProductDataValidator {
                     .value(enableInstallmentLevelDelinquency).ignoreIfNull().validateForBooleanValue();
         }
 
+        String loanScheduleType = loanProduct.getLoanProductRelatedDetail().getLoanScheduleType().name();
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.LOAN_SCHEDULE_TYPE, element)) {
-            final String loanScheduleType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_TYPE, element);
-            baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_TYPE).value(loanScheduleType).ignoreIfNull()
+            loanScheduleType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_TYPE, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_TYPE).value(loanScheduleType)
                     .isOneOfEnumValues(LoanScheduleType.class);
+
+            if (!LoanScheduleType.PROGRESSIVE.equals(LoanScheduleType.valueOf(loanScheduleType))
+                    && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                            .equals(transactionProcessingStrategyCode)) {
+                baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE).failWithCode(
+                        "supported.only.for.progressive.loan.schedule.type",
+                        "Progressive repayment schedule processing is only available with `Advanced payment allocation` strategy");
+            }
         }
 
         String loanScheduleProcessingType = loanProduct.getLoanProductRelatedDetail().getLoanScheduleProcessingType().name();
@@ -1795,7 +1815,7 @@ public final class LoanProductDataValidator {
             loanScheduleProcessingType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE,
                     element);
             baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE).value(loanScheduleProcessingType)
-                    .ignoreIfNull().isOneOfEnumValues(LoanScheduleProcessingType.class);
+                    .isOneOfEnumValues(LoanScheduleProcessingType.class);
         }
 
         List<LoanProductPaymentAllocationRule> allocationRules = loanProduct.getPaymentAllocationRules();

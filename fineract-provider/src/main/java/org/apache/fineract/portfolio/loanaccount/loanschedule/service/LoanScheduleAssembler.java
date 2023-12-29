@@ -23,7 +23,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -42,7 +41,6 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
@@ -138,7 +136,6 @@ public class LoanScheduleAssembler {
     private final FloatingRatesReadPlatformService floatingRatesReadPlatformService;
     private final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator;
     private final CalendarInstanceRepository calendarInstanceRepository;
-    private final PlatformSecurityContext context;
     private final LoanUtilService loanUtilService;
 
     @Autowired
@@ -151,8 +148,7 @@ public class LoanScheduleAssembler {
             final WorkingDaysRepositoryWrapper workingDaysRepository,
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
-            final CalendarInstanceRepository calendarInstanceRepository, final PlatformSecurityContext context,
-            final LoanUtilService loanUtilService) {
+            final CalendarInstanceRepository calendarInstanceRepository, final LoanUtilService loanUtilService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -168,7 +164,6 @@ public class LoanScheduleAssembler {
         this.floatingRatesReadPlatformService = floatingRatesReadPlatformService;
         this.variableLoanScheduleFromApiJsonValidator = variableLoanScheduleFromApiJsonValidator;
         this.calendarInstanceRepository = calendarInstanceRepository;
-        this.context = context;
         this.loanUtilService = loanUtilService;
     }
 
@@ -675,8 +670,7 @@ public class LoanScheduleAssembler {
 
         final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails);
 
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
-        final MathContext mc = new MathContext(8, roundingMode);
+        final MathContext mc = MoneyHelper.getMathContext();
         HolidayDetailDTO detailDTO = new HolidayDetailDTO(isHolidayEnabled, holidays, workingDays);
 
         LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory.create(loanApplicationTerms.getLoanScheduleType(),
@@ -703,8 +697,8 @@ public class LoanScheduleAssembler {
     public LoanScheduleModel assembleForInterestRecalculation(final LoanApplicationTerms loanApplicationTerms, final Long officeId,
             Loan loan, final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor,
             final LocalDate rescheduleFrom) {
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
-        final MathContext mc = new MathContext(8, roundingMode);
+
+        final MathContext mc = MoneyHelper.getMathContext();
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
 
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
@@ -723,8 +717,8 @@ public class LoanScheduleAssembler {
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor) {
         final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory.create(loanApplicationTerms.getLoanScheduleType(),
                 loanApplicationTerms.getInterestMethod());
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
-        final MathContext mc = new MathContext(8, roundingMode);
+
+        final MathContext mc = MoneyHelper.getMathContext();
 
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
