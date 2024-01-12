@@ -1500,6 +1500,11 @@ final class LoanProductsApiResourceSwagger {
         @Schema(example = "dd MMMM yyyy")
         public String dateFormat;
 
+        @Schema(example = "HORIZONTAL")
+        public String loanScheduleProcessingType;
+        @Schema(example = "CUMULATIVE")
+        public String loanScheduleType;
+
         public PostLoanProductsRequest.AllowAttributeOverrides allowAttributeOverrides;
         public List<PostLoanProductsRequest.RateData> rates;
 
