@@ -209,7 +209,7 @@ public class LoanProduct extends AbstractPersistableCustom {
     private Integer overAppliedNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delinquency_bucket_id")
+    @JoinColumn(name = "delinquency_bucket_id", nullable = true)
     private DelinquencyBucket delinquencyBucket;
 
     @Column(name = "enable_installment_level_delinquency", nullable = false)
@@ -681,6 +681,13 @@ public class LoanProduct extends AbstractPersistableCustom {
             }
         }
 
+        this.creditAllocationRules = creditAllocationRules;
+        if (this.creditAllocationRules != null) {
+            for (LoanProductCreditAllocationRule loanProductCreditAllocationRule : this.creditAllocationRules) {
+                loanProductCreditAllocationRule.setLoanProduct(this);
+            }
+        }
+
         this.name = name.trim();
         this.shortName = shortName.trim();
         if (StringUtils.isNotBlank(description)) {
@@ -778,6 +785,13 @@ public class LoanProduct extends AbstractPersistableCustom {
             throw new LoanProductGeneralRuleException(
                     "payment_allocation.must.not.be.provided.when.allocation.strategy.is.not.advanced-payment-strategy",
                     "In case '" + transactionProcessingStrategyCode + "' payment strategy, payment_allocation must not be provided");
+        }
+
+        if (this.creditAllocationRules != null && creditAllocationRules.size() > 0
+                && !transactionProcessingStrategyCode.equals("advanced-payment-allocation-strategy")) {
+            throw new LoanProductGeneralRuleException(
+                    "creditAllocation.must.not.be.provided.when.allocation.strategy.is.not.advanced-payment-strategy",
+                    "In case '" + transactionProcessingStrategyCode + "' payment strategy, creditAllocation must not be provided");
         }
 
         if (this.disallowExpectedDisbursements) {
@@ -913,6 +927,10 @@ public class LoanProduct extends AbstractPersistableCustom {
         return this.paymentAllocationRules;
     }
 
+    public List<LoanProductCreditAllocationRule> getCreditAllocationRules() {
+        return this.creditAllocationRules;
+    }
+
     public void update(final LoanProductConfigurableAttributes loanConfigurableAttributes) {
         this.loanConfigurableAttributes = loanConfigurableAttributes;
     }
@@ -1003,6 +1021,14 @@ public class LoanProduct extends AbstractPersistableCustom {
             final JsonArray jsonArray = command.arrayOfParameterNamed(paymentAllocationParamName);
             if (jsonArray != null) {
                 actualChanges.put(paymentAllocationParamName, command.jsonFragment(paymentAllocationParamName));
+            }
+        }
+
+        final String creditAllocationParamName = "creditAllocation";
+        if (command.hasParameter(creditAllocationParamName)) {
+            final JsonArray jsonArray = command.arrayOfParameterNamed(creditAllocationParamName);
+            if (jsonArray != null) {
+                actualChanges.put(creditAllocationParamName, command.jsonFragment(creditAllocationParamName));
             }
         }
 
