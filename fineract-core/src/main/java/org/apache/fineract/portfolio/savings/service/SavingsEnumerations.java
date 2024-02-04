@@ -160,7 +160,7 @@ public final class SavingsEnumerations {
             case ACCRUAL:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ACCRUAL.getValue().longValue(),
                         SavingsAccountTransactionType.ACCRUAL.getCode(), "Accrual");
-                break;
+            break;
             case INITIATE_TRANSFER:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.INITIATE_TRANSFER.getValue().longValue(),
                         SavingsAccountTransactionType.INITIATE_TRANSFER.getCode(), "Transfer initiated");

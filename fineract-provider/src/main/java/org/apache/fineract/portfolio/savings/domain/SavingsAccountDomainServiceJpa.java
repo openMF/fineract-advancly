@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -48,6 +49,7 @@ import org.apache.fineract.portfolio.savings.exception.DepositAccountTransaction
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainService {
@@ -321,6 +323,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final List<PostingPeriod> postingPeriods = account.calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
                 isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
                 postReversals);
+        log.info("postInterest {}", postingPeriods.size());
 
         MonetaryCurrency currency = account.getCurrency();
         Money interestPostedToDate = Money.zero(currency);
@@ -340,9 +343,11 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         }
 
         for (final PostingPeriod interestPostingPeriod : postingPeriods) {
+            log.info("  period: {}", interestPostingPeriod.dateOfPostingTransaction());
 
             final LocalDate interestPostingTransactionDate = interestPostingPeriod.dateOfPostingTransaction();
             final Money interestEarnedToBePostedForPeriod = interestPostingPeriod.getInterestEarned();
+            log.info("  interestEarnedToBePostedForPeriod: {}", interestEarnedToBePostedForPeriod.toString());
 
             if (!interestPostingTransactionDate.isAfter(interestPostingUpToDate)) {
                 interestPostedToDate = interestPostedToDate.plus(interestEarnedToBePostedForPeriod);
@@ -354,33 +359,38 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                     postingTransaction = account.findInterestPostingTransactionFor(interestPostingTransactionDate);
                 }
                 if (postingTransaction == null) {
-                    SavingsAccountTransaction newPostingTransaction;
+                    SavingsAccountTransaction newPostingTransaction = null;
                     if (interestEarnedToBePostedForPeriod.isGreaterThanOrEqualTo(Money.zero(currency))) {
-
-                        newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(),
-                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
+                        if (interestEarnedToBePostedForPeriod.isGreaterThan(Money.zero(currency))) {
+                            newPostingTransaction = SavingsAccountTransaction.interestPosting(account, account.office(),
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                    interestPostingPeriod.isUserPosting());
+                        }
                     } else {
                         newPostingTransaction = SavingsAccountTransaction.overdraftInterest(account, account.office(),
                                 interestPostingTransactionDate, interestEarnedToBePostedForPeriod.negated(),
                                 interestPostingPeriod.isUserPosting());
                     }
-                    if (backdatedTxnsAllowedTill) {
-                        account.addTransactionToExisting(newPostingTransaction);
-                    } else {
-                        account.addTransaction(newPostingTransaction);
-                    }
-                    if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
-                        SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
-                                interestPostingTransactionDate, interestEarnedToBePostedForPeriod, interestPostingPeriod.isUserPosting());
+                    if (newPostingTransaction != null) {
                         if (backdatedTxnsAllowedTill) {
-                            account.addTransactionToExisting(accrualTransaction);
+                            account.addTransactionToExisting(newPostingTransaction);
                         } else {
-                            account.addTransaction(accrualTransaction);
+                            account.addTransaction(newPostingTransaction);
                         }
-                    }
-                    if (applyWithHoldTax) {
-                        account.createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
-                                backdatedTxnsAllowedTill);
+                        if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
+                            SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
+                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                    interestPostingPeriod.isUserPosting());
+                            if (backdatedTxnsAllowedTill) {
+                                account.addTransactionToExisting(accrualTransaction);
+                            } else {
+                                account.addTransaction(accrualTransaction);
+                            }
+                        }
+                        if (applyWithHoldTax) {
+                            account.createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,
+                                    backdatedTxnsAllowedTill);
+                        }
                     }
                     recalucateDailyBalanceDetails = true;
                 } else {
@@ -390,6 +400,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                     } else {
                         correctionRequired = postingTransaction.hasNotAmount(interestEarnedToBePostedForPeriod.negated());
                     }
+                    log.info("  correctionRequired {}", correctionRequired);
                     if (correctionRequired) {
                         boolean applyWithHoldTaxForOldTransaction = false;
                         postingTransaction.reverse();

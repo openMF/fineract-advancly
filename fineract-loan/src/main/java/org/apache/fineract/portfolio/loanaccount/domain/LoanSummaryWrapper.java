@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public final class LoanSummaryWrapper {
+
+    public BigDecimal calculateTotalPrincipalRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.add(installment.getPrincipalCompleted());
+        }
+        return total;
+    }
 
     public Money calculateTotalPrincipalRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {

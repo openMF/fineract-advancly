@@ -31,8 +31,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
@@ -48,6 +50,8 @@ import org.apache.fineract.portfolio.savings.domain.SavingsHelper;
 import org.apache.fineract.portfolio.savings.domain.interest.PostingPeriod;
 import org.apache.fineract.portfolio.tax.data.TaxComponentData;
 import org.apache.fineract.portfolio.tax.service.TaxUtils;
+
+@Slf4j
 @RequiredArgsConstructor
 public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountInterestPostingService {
 
@@ -59,6 +63,8 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
             final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final SavingsAccountData savingsAccountData) {
         Money interestPostedToDate = Money.zero(savingsAccountData.getCurrency());
         LocalDate startInterestDate = getStartInterestCalculationDate(savingsAccountData);
+        log.info("  postInterest - account: {} {} {}", savingsAccountData.getAccountNo(), startInterestDate,
+                savingsAccountData.getSummary().getInterestPostedTillDate());
 
         if (backdatedTxnsAllowedTill && savingsAccountData.getSummary().getInterestPostedTillDate() != null) {
             interestPostedToDate = Money.of(savingsAccountData.getCurrency(), savingsAccountData.getSummary().getTotalInterestPosted());
@@ -66,10 +72,12 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
         } else {
             savingsAccountData.setStartInterestCalculationDate(startInterestDate);
         }
+        log.info("   interestCalculationDate: {}", savingsAccountData.getStartInterestCalculationDate());
 
         final List<PostingPeriod> postingPeriods = calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
                 isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
                 savingsAccountData);
+        log.info(" postingPeriods: {} {}", savingsAccountData.getAccountNo(), postingPeriods.size());
 
         boolean recalucateDailyBalanceDetails = false;
         boolean applyWithHoldTax = isWithHoldTaxApplicableForInterestPosting(savingsAccountData);
@@ -200,6 +208,9 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
             boolean isInterestTransfer, final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final Integer financialYearBeginningMonth,
             final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final SavingsAccountData savingsAccountData) {
 
+        log.info("  calculateInterestUsing {} : {} {} : {} : {}", savingsAccountData.getAccountNo(),
+                savingsAccountData.getSavingsProductName(), savingsAccountData.getDepositType().getValue(), upToInterestCalculationDate,
+                postInterestOnDate);
         // no openingBalance concept supported yet but probably will to allow
         // for migrations.
         Money openingAccountBalance = null;
@@ -238,6 +249,7 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
         final List<LocalDateInterval> postingPeriodIntervals = this.savingsHelper.determineInterestPostingPeriods(
                 savingsAccountData.getStartInterestCalculationDate(), upToInterestCalculationDate, postingPeriodType,
                 financialYearBeginningMonth, postedAsOnDates);
+        log.info("  postingPeriodIntervals {}", postingPeriodIntervals.size());
 
         final List<PostingPeriod> allPostingPeriods = new ArrayList<>();
 
@@ -274,16 +286,21 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
             if (postedAsOnDates.contains(periodInterval.endDate().plusDays(1))) {
                 isUserPosting = true;
             }
-            final PostingPeriod postingPeriod = PostingPeriod.createFromDTO(periodInterval, periodStartingBalance,
-                    retreiveOrderedNonInterestPostingTransactions(savingsAccountData), monetaryCurrency, compoundingPeriodType,
-                    interestCalculationType, interestRateAsFraction, daysInYearType.getValue(), upToInterestCalculationDate,
-                    interestPostTransactions, isInterestTransfer, minBalanceForInterestCalculation,
-                    isSavingsInterestPostingAtCurrentPeriodEnd, overdraftInterestRateAsFraction, minOverdraftForInterestCalculation,
-                    isUserPosting, financialYearBeginningMonth, savingsAccountData.isAllowOverdraft());
+            List<SavingsAccountTransactionData> listOfTransactions = retreiveOrderedNonInterestPostingTransactions(savingsAccountData);
+            log.info("  listOfTransactions: {} {}", savingsAccountData.getAccountNo(), listOfTransactions.size());
+            if (listOfTransactions.size() > 0) {
+                final PostingPeriod postingPeriod = PostingPeriod.createFromDTO(periodInterval, periodStartingBalance, listOfTransactions,
+                        monetaryCurrency, compoundingPeriodType, interestCalculationType, interestRateAsFraction, daysInYearType.getValue(),
+                        upToInterestCalculationDate, interestPostTransactions, isInterestTransfer, minBalanceForInterestCalculation,
+                        isSavingsInterestPostingAtCurrentPeriodEnd, overdraftInterestRateAsFraction, minOverdraftForInterestCalculation,
+                        isUserPosting, financialYearBeginningMonth, savingsAccountData.isAllowOverdraft());
 
-            periodStartingBalance = postingPeriod.closingBalance();
-
-            allPostingPeriods.add(postingPeriod);
+                periodStartingBalance = postingPeriod.closingBalance();
+                log.info("  postingPeriod {} {}", postingPeriod.dateOfPostingTransaction(), postingPeriod.getInterestEarned().getAmount());
+                if (!MathUtil.isZero(postingPeriod.getInterestEarned().getAmount())) {
+                    allPostingPeriods.add(postingPeriod);
+                }
+            }
         }
 
         this.savingsHelper.calculateInterestForAllPostingPeriods(monetaryCurrency, allPostingPeriods,

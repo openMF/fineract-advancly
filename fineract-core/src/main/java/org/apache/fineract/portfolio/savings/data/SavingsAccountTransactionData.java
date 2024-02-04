@@ -285,8 +285,8 @@ public final class SavingsAccountTransactionData implements Serializable {
         return createImport(transactionType, savingsAccount.getId(), date, amount.getAmount(), submittedOnDate, isManualTransaction);
     }
 
-    public static SavingsAccountTransactionData accrual(final SavingsAccountData savingsAccount, final LocalDate date,
-            final Money amount, final boolean isManualTransaction) {
+    public static SavingsAccountTransactionData accrual(final SavingsAccountData savingsAccount, final LocalDate date, final Money amount,
+            final boolean isManualTransaction) {
         final LocalDate submittedOnDate = DateUtils.getBusinessLocalDate();
         final SavingsAccountTransactionType savingsAccountTransactionType = SavingsAccountTransactionType.ACCRUAL;
         SavingsAccountTransactionEnumData transactionType = new SavingsAccountTransactionEnumData(

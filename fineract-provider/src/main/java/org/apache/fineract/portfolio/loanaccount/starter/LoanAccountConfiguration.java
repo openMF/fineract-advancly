@@ -200,7 +200,7 @@ public class LoanAccountConfiguration {
             LoanTransactionRepository loanTransactionRepository,
             LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService,
             ConfigurationDomainService configurationDomainService, ExternalIdFactory externalIdFactory) {
-        return new LoanAccrualWritePlatformServiceImpl(loanReadPlatformService, loanChargeReadPlatformService, jdbcTemplate, 
+        return new LoanAccrualWritePlatformServiceImpl(loanReadPlatformService, loanChargeReadPlatformService, jdbcTemplate,
                 journalEntryWritePlatformService, context, loanRepositoryWrapper, loanRepository, officeRepository,
                 businessEventNotifierService, loanTransactionRepository, loanAccrualTransactionBusinessEventService,
                 configurationDomainService, externalIdFactory);
@@ -414,8 +414,8 @@ public class LoanAccountConfiguration {
                 businessEventNotifierService, guarantorDomainService, loanUtilService, loanSummaryWrapper,
                 entityDatatableChecksWritePlatformService, transactionProcessingStrategy, codeValueRepository,
                 cashierTransactionDataValidator, glimRepository, loanRepository, repaymentWithPostDatedChecksAssembler,
-                postDatedChecksRepository, loanRepaymentScheduleInstallmentRepository,
-                defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
+                postDatedChecksRepository, loanRepaymentScheduleInstallmentRepository, defaultLoanLifecycleStateMachine,
+                loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService);
     }
 

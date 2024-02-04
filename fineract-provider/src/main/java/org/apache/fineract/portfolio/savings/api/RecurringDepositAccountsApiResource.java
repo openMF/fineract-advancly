@@ -191,7 +191,8 @@ public class RecurringDepositAccountsApiResource {
 
         this.context.authenticatedUser().validateHasReadPermission(DepositsApiConstants.RECURRING_DEPOSIT_ACCOUNT_RESOURCE_NAME);
 
-        if (!(CommandParameterUtil.is(chargeStatus, "all") || CommandParameterUtil.is(chargeStatus, "active") || CommandParameterUtil.is(chargeStatus, "inactive"))) {
+        if (!(CommandParameterUtil.is(chargeStatus, "all") || CommandParameterUtil.is(chargeStatus, "active")
+                || CommandParameterUtil.is(chargeStatus, "inactive"))) {
             throw new UnrecognizedQueryParamException("status", chargeStatus, new Object[] { "all", "active", "inactive" });
         }
 
@@ -314,7 +315,6 @@ public class RecurringDepositAccountsApiResource {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(jsonApiRequest);
 
-
         CommandWrapper commandRequest = null;
         if (CommandParameterUtil.is(commandParam, "reject")) {
             commandRequest = builder.rejectRecurringDepositAccountApplication(accountId).build();
@@ -331,8 +331,7 @@ public class RecurringDepositAccountsApiResource {
         } else if (CommandParameterUtil.is(commandParam, "calculateInterest")) {
             commandRequest = builder.withNoJsonBody().recurringDepositAccountInterestCalculation(accountId).build();
         } else if (CommandParameterUtil.is(commandParam, DepositsApiConstants.UPDATE_DEPOSIT_AMOUNT)) {
-            commandRequest = builder.updateDepositAmountForRecurringDepositAccount(accountId)
-                    .withJson(apiRequestBodyAsJson).build();
+            commandRequest = builder.updateDepositAmountForRecurringDepositAccount(accountId).withJson(apiRequestBodyAsJson).build();
         } else if (CommandParameterUtil.is(commandParam, "postInterest")) {
             commandRequest = builder.recurringDepositAccountInterestPosting(accountId).build();
         } else if (CommandParameterUtil.is(commandParam, "close")) {
@@ -351,8 +350,8 @@ public class RecurringDepositAccountsApiResource {
 
         if (commandRequest == null) {
             throw new UnrecognizedQueryParamException("command", commandParam,
-                    new Object[] { "reject", "withdrawnByApplicant", "approve", "undoapproval", "activate", "undoactivate", "calculateInterest",
-                            "postInterest", "close", "prematureClose", "calculatePrematureAmount" });
+                    new Object[] { "reject", "withdrawnByApplicant", "approve", "undoapproval", "activate", "undoactivate",
+                            "calculateInterest", "postInterest", "close", "prematureClose", "calculatePrematureAmount" });
         }
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

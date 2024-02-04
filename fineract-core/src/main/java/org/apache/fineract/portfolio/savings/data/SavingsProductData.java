@@ -354,13 +354,14 @@ public final class SavingsProductData implements Serializable {
                 isDormancyTrackingActive, daysToInactive, daysToDormancy, daysToEscheat, accountMappingForPayment, accrualCharges);
     }
 
-    public static SavingsProductData createForInterestPosting(final Long id, final EnumOptionData accountingRule) {
-        return new SavingsProductData(id, accountingRule);
+    public static SavingsProductData createForInterestPosting(final Long id, final String productName,
+            final EnumOptionData accountingRule) {
+        return new SavingsProductData(id, productName, accountingRule);
     }
 
-    private SavingsProductData(final Long id, final EnumOptionData accountingRule) {
+    private SavingsProductData(final Long id, final String productName, final EnumOptionData accountingRule) {
         this.id = id;
-        this.name = null;
+        this.name = productName;
         this.shortName = null;
         this.description = null;
         this.currency = null;

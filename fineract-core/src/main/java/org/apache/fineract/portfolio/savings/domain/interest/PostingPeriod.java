@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -34,6 +35,7 @@ import org.apache.fineract.portfolio.savings.SavingsCompoundingInterestPeriodTyp
 import org.apache.fineract.portfolio.savings.SavingsInterestCalculationType;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionData;
 
+@Slf4j
 public final class PostingPeriod {
 
     private final LocalDateInterval periodInterval;
@@ -310,7 +312,7 @@ public final class PostingPeriod {
     }
 
     public Money getInterestEarned() {
-        return this.interestEarnedRounded;
+        return this.interestEarnedRounded != null ? this.interestEarnedRounded : Money.zero(this.currency);
     }
 
     private static List<CompoundingPeriod> compoundingPeriodsInPostingPeriod(final LocalDateInterval postingPeriodInterval,

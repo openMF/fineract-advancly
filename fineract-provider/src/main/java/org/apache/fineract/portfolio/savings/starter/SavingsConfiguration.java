@@ -234,12 +234,11 @@ public class SavingsConfiguration {
     ) {
         return new DepositAccountWritePlatformServiceJpaRepositoryImpl(context, savingAccountRepositoryWrapper,
                 savingsAccountTransactionRepository, depositAccountAssembler, depositAccountTransactionDataValidator,
-                savingsAccountChargeDataValidator, paymentDetailWritePlatformService, 
-                journalEntryWritePlatformService, depositAccountDomainService, noteRepository, accountTransfersReadPlatformService,
-                chargeRepository, savingsAccountChargeRepository, accountAssociationsReadPlatformService,
-                accountTransfersWritePlatformService, calendarInstanceRepository,
-                configurationDomainService, holidayRepository, workingDaysRepository, depositAccountOnHoldTransactionRepository,
-                savingsAccountDomainService);
+                savingsAccountChargeDataValidator, paymentDetailWritePlatformService, journalEntryWritePlatformService,
+                depositAccountDomainService, noteRepository, accountTransfersReadPlatformService, chargeRepository,
+                savingsAccountChargeRepository, accountAssociationsReadPlatformService, accountTransfersWritePlatformService,
+                calendarInstanceRepository, configurationDomainService, holidayRepository, workingDaysRepository,
+                depositAccountOnHoldTransactionRepository, savingsAccountDomainService);
     }
 
     @Bean
@@ -365,15 +364,15 @@ public class SavingsConfiguration {
             StandingInstructionRepository standingInstructionRepository, BusinessEventNotifierService businessEventNotifierService,
             GSIMRepositoy gsimRepository, SavingsAccountInterestPostingService savingsAccountInterestPostingService,
             SavingsAccrualWritePlatformService savingsAccrualWritePlatformService, ErrorHandler errorHandler) {
-            return new SavingsAccountWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, savingAccountRepositoryWrapper,
-                    staffRepository, savingsAccountTransactionRepository, savingAccountAssembler, savingsAccountTransactionDataValidator,
-                    savingsAccountChargeDataValidator, paymentDetailWritePlatformService, journalEntryWritePlatformService,
-                    savingsAccountDomainService, noteRepository, accountTransfersReadPlatformService, accountAssociationsReadPlatformService,
-                    chargeRepository, savingsAccountChargeRepository, holidayRepository, workingDaysRepository, configurationDomainService,
-                    depositAccountOnHoldTransactionRepository, entityDatatableChecksWritePlatformService, appuserRepository,
-                    standingInstructionRepository, businessEventNotifierService, gsimRepository, savingsAccountInterestPostingService,
-                    savingsAccrualWritePlatformService, errorHandler);
-}
+        return new SavingsAccountWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, savingAccountRepositoryWrapper,
+                staffRepository, savingsAccountTransactionRepository, savingAccountAssembler, savingsAccountTransactionDataValidator,
+                savingsAccountChargeDataValidator, paymentDetailWritePlatformService, journalEntryWritePlatformService,
+                savingsAccountDomainService, noteRepository, accountTransfersReadPlatformService, accountAssociationsReadPlatformService,
+                chargeRepository, savingsAccountChargeRepository, holidayRepository, workingDaysRepository, configurationDomainService,
+                depositAccountOnHoldTransactionRepository, entityDatatableChecksWritePlatformService, appuserRepository,
+                standingInstructionRepository, businessEventNotifierService, gsimRepository, savingsAccountInterestPostingService,
+                savingsAccrualWritePlatformService, errorHandler);
+    }
 
     @Bean
     @ConditionalOnMissingBean(SavingsApplicationProcessWritePlatformService.class)

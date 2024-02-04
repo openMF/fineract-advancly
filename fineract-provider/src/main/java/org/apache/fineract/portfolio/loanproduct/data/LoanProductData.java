@@ -761,7 +761,8 @@ public class LoanProductData implements Serializable {
             final BigDecimal disbursedAmountPercentageForDownPayment, final boolean enableAutoRepaymentForDownPayment,
             final Collection<AdvancedPaymentData> paymentAllocation, final Collection<CreditAllocationData> creditAllocation,
             final EnumOptionData repaymentStartDateType, final boolean enableInstallmentLevelDelinquency,
-            final EnumOptionData loanScheduleType, final EnumOptionData loanScheduleProcessingType, final boolean allowAccrualPostingInArrears) {
+            final EnumOptionData loanScheduleType, final EnumOptionData loanScheduleProcessingType,
+            final boolean allowAccrualPostingInArrears) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
