@@ -45,7 +45,7 @@ jobs:
       - name: Congfigure vega-cli
         run: npm i -g vega-cli --unsafe
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@342dbebe7272035434f9baccc29a816ec6dd2c7b
+        uses: gradle/wrapper-validation-action@83cf5fdbbf627c8da6fec32f28db58967a3136ac
       - name: Verify MariaDB connection
         run: |
             while ! mysqladmin ping -h"127.0.0.1" -P3306 ; do
@@ -88,7 +88,7 @@ jobs:
 
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3
         with:
           name: test-results
           path: |
@@ -99,7 +99,7 @@ jobs:
 
       - name: Archive server logs
         if: always()
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3
         with:
           name: server-logs
           path: |

@@ -37,6 +37,8 @@ import org.apache.fineract.batch.command.internal.GetTransactionByExternalIdComm
 import org.apache.fineract.batch.command.internal.GetTransactionByIdCommandStrategy;
 import org.apache.fineract.batch.domain.BatchRequest;
 import org.apache.fineract.batch.domain.BatchResponse;
+import org.apache.fineract.client.util.JSON;
+import org.apache.fineract.integrationtests.common.error.ErrorResponse;
 import org.apache.fineract.integrationtests.common.savings.SavingsTransactionData;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -58,6 +60,8 @@ public final class BatchHelper {
 
     private static final String BATCH_API_WITHOUT_ENCLOSING_URL_EXT = BATCH_API_URL + "&enclosingTransaction=false";
     private static final SecureRandom secureRandom = new SecureRandom();
+
+    private static final Gson GSON = new JSON().getGson();
 
     private BatchHelper() {
 
@@ -108,6 +112,14 @@ public final class BatchHelper {
                 jsonifiedBatchRequests, null);
         LOG.info("BatchHelper Response {}", response);
         return BatchHelper.fromJsonString(response);
+    }
+
+    public static ErrorResponse postBatchRequestsWithoutEnclosingTransactionError(final RequestSpecification requestSpec,
+            final ResponseSpecification responseSpec, final String jsonifiedBatchRequests) {
+        final String response = Utils.performServerPost(requestSpec, responseSpec, BATCH_API_WITHOUT_ENCLOSING_URL_EXT,
+                jsonifiedBatchRequests, null);
+        LOG.info("BatchHelper Response {}", response);
+        return GSON.fromJson(response, ErrorResponse.class);
     }
 
     /**
