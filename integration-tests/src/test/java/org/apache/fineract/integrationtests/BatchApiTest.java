@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.integrationtests;
 
+import static java.lang.Integer.parseInt;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,6 +56,7 @@ import org.apache.fineract.integrationtests.common.CollateralManagementHelper;
 import org.apache.fineract.integrationtests.common.GlobalConfigurationHelper;
 import org.apache.fineract.integrationtests.common.Utils;
 import org.apache.fineract.integrationtests.common.charges.ChargesHelper;
+import org.apache.fineract.integrationtests.common.error.ErrorResponse;
 import org.apache.fineract.integrationtests.common.loans.LoanAccountLockHelper;
 import org.apache.fineract.integrationtests.common.loans.LoanProductTestBuilder;
 import org.apache.fineract.integrationtests.common.loans.LoanTestLifecycleExtension;
@@ -76,14 +78,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Test class for {@link org.apache.fineract.batch.command.CommandStrategyProvider}. This tests the response provided by
- * commandStrategy by injecting it with a {@code BatchRequest}.
- *
- * @author RishabhShukla
- * @see org.apache.fineract.integrationtests.common.BatchHelper
- * @see org.apache.fineract.batch.domain.BatchRequest
- */
 @ExtendWith(LoanTestLifecycleExtension.class)
 public class BatchApiTest {
 
@@ -1198,8 +1192,8 @@ public class BatchApiTest {
     }
 
     /**
-     * Test for the successful create client, creat, approve and get loan. A '200' status code is expected on successful
-     * responses.
+     * Test for the successful create client, create, approve and get loan. A '200' status code is expected on
+     * successful responses.
      *
      * @see org.apache.fineract.batch.command.internal.CreateClientCommandStrategy
      * @see org.apache.fineract.batch.command.internal.ApplyLoanCommandStrategy
@@ -2462,10 +2456,11 @@ public class BatchApiTest {
 
         final String jsonifiedRepaymentRequest = BatchHelper.toJsonString(List.of(br));
 
-        final List<BatchResponse> repaymentResponse = BatchHelper.postBatchRequestsWithoutEnclosingTransaction(requestSpec,
-                this.responseSpec, jsonifiedRepaymentRequest);
-
-        Assertions.assertEquals(HttpStatus.SC_CONFLICT, repaymentResponse.get(0).getStatusCode(), "Verify Status Code 409 for Locked Loan");
+        // verify HTTP 409
+        ResponseSpecification conflictResponseSpec = new ResponseSpecBuilder().expectStatusCode(409).build();
+        ErrorResponse errorResponse = BatchHelper.postBatchRequestsWithoutEnclosingTransactionError(requestSpec, conflictResponseSpec,
+                jsonifiedRepaymentRequest);
+        assertEquals(409, parseInt(errorResponse.getHttpStatusCode()));
     }
 
     /**
@@ -2543,10 +2538,11 @@ public class BatchApiTest {
 
         final String jsonifiedRepaymentRequest = BatchHelper.toJsonString(List.of(br));
 
-        final List<BatchResponse> repaymentResponse = BatchHelper.postBatchRequestsWithoutEnclosingTransaction(requestSpec,
-                this.responseSpec, jsonifiedRepaymentRequest);
-
-        Assertions.assertEquals(HttpStatus.SC_CONFLICT, repaymentResponse.get(0).getStatusCode(), "Verify Status Code 409 for Locked Loan");
+        // verify HTTP 409
+        ResponseSpecification conflictResponseSpec = new ResponseSpecBuilder().expectStatusCode(409).build();
+        ErrorResponse errorResponse = BatchHelper.postBatchRequestsWithoutEnclosingTransactionError(requestSpec, conflictResponseSpec,
+                jsonifiedRepaymentRequest);
+        assertEquals(409, parseInt(errorResponse.getHttpStatusCode()));
     }
 
     @Test
