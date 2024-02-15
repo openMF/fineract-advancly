@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
@@ -63,7 +62,7 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
             final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final SavingsAccountData savingsAccountData) {
         Money interestPostedToDate = Money.zero(savingsAccountData.getCurrency());
         LocalDate startInterestDate = getStartInterestCalculationDate(savingsAccountData);
-        log.info("  postInterest - account: {} {} {}", savingsAccountData.getAccountNo(), startInterestDate,
+        log.debug("  postInterest - account: {} {} {}", savingsAccountData.getAccountNo(), startInterestDate,
                 savingsAccountData.getSummary().getInterestPostedTillDate());
 
         if (backdatedTxnsAllowedTill && savingsAccountData.getSummary().getInterestPostedTillDate() != null) {
@@ -72,12 +71,12 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
         } else {
             savingsAccountData.setStartInterestCalculationDate(startInterestDate);
         }
-        log.info("   interestCalculationDate: {}", savingsAccountData.getStartInterestCalculationDate());
+        log.debug("   interestCalculationDate: {}", savingsAccountData.getStartInterestCalculationDate());
 
         final List<PostingPeriod> postingPeriods = calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
                 isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
                 savingsAccountData);
-        log.info(" postingPeriods: {} {}", savingsAccountData.getAccountNo(), postingPeriods.size());
+        log.debug(" postingPeriods: {} {}", savingsAccountData.getAccountNo(), postingPeriods.size());
 
         boolean recalucateDailyBalanceDetails = false;
         boolean applyWithHoldTax = isWithHoldTaxApplicableForInterestPosting(savingsAccountData);
@@ -208,7 +207,7 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
             boolean isInterestTransfer, final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final Integer financialYearBeginningMonth,
             final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final SavingsAccountData savingsAccountData) {
 
-        log.info("  calculateInterestUsing {} : {} {} : {} : {}", savingsAccountData.getAccountNo(),
+        log.debug("  calculateInterestUsing {} : {} {} : {} : {}", savingsAccountData.getAccountNo(),
                 savingsAccountData.getSavingsProductName(), savingsAccountData.getDepositType().getValue(), upToInterestCalculationDate,
                 postInterestOnDate);
         // no openingBalance concept supported yet but probably will to allow
@@ -249,7 +248,7 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
         final List<LocalDateInterval> postingPeriodIntervals = this.savingsHelper.determineInterestPostingPeriods(
                 savingsAccountData.getStartInterestCalculationDate(), upToInterestCalculationDate, postingPeriodType,
                 financialYearBeginningMonth, postedAsOnDates);
-        log.info("  postingPeriodIntervals {}", postingPeriodIntervals.size());
+        log.debug("  postingPeriodIntervals {}", postingPeriodIntervals.size());
 
         final List<PostingPeriod> allPostingPeriods = new ArrayList<>();
 
@@ -287,7 +286,7 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
                 isUserPosting = true;
             }
             List<SavingsAccountTransactionData> listOfTransactions = retreiveOrderedNonInterestPostingTransactions(savingsAccountData);
-            log.info("  listOfTransactions: {} {}", savingsAccountData.getAccountNo(), listOfTransactions.size());
+            log.debug("  listOfTransactions: {} {}", savingsAccountData.getAccountNo(), listOfTransactions.size());
             if (listOfTransactions.size() > 0) {
                 final PostingPeriod postingPeriod = PostingPeriod.createFromDTO(periodInterval, periodStartingBalance, listOfTransactions,
                         monetaryCurrency, compoundingPeriodType, interestCalculationType, interestRateAsFraction, daysInYearType.getValue(),
@@ -296,10 +295,8 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
                         isUserPosting, financialYearBeginningMonth, savingsAccountData.isAllowOverdraft());
 
                 periodStartingBalance = postingPeriod.closingBalance();
-                log.info("  postingPeriod {} {}", postingPeriod.dateOfPostingTransaction(), postingPeriod.getInterestEarned().getAmount());
-                if (!MathUtil.isZero(postingPeriod.getInterestEarned().getAmount())) {
-                    allPostingPeriods.add(postingPeriod);
-                }
+                log.debug("  postingPeriod {} {}", postingPeriod.dateOfPostingTransaction(), postingPeriod.getInterestEarned().getAmount());
+                allPostingPeriods.add(postingPeriod);
             }
         }
 
