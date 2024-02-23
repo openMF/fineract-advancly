@@ -3838,7 +3838,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             if (loanTransaction.isRefund() || loanTransaction.isRefundForActiveLoan()) {
                 totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getAmount(currency));
-            } else if (loanTransaction.isCreditBalanceRefund() || loanTransaction.isChargeback() || loanTransaction.isDisbursement()) {
+            } else if (loanTransaction.isCreditBalanceRefund() || loanTransaction.isChargeback()) {
                 totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getOverPaymentPortion(currency));
             }
         }
@@ -4278,6 +4278,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         return cumulativePaid;
+    }
+
+    public Money getTotalPrincipalOutstandingUntil(LocalDate date) {
+        return getRepaymentScheduleInstallments().stream()
+                .filter(installment -> installment.getDueDate().isBefore(date) || installment.getDueDate().isEqual(date))
+                .map(installment -> installment.getPrincipalOutstanding(loanCurrency())).reduce(Money.zero(loanCurrency()), Money::add);
+
     }
 
     private Money getTotalInterestOutstandingOnLoan() {
