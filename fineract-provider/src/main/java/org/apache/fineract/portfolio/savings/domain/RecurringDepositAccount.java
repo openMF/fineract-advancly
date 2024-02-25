@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -74,6 +75,7 @@ import org.apache.fineract.portfolio.savings.domain.interest.SavingsAccountTrans
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
 import org.apache.fineract.useradministration.domain.AppUser;
 
+@Slf4j
 @Entity
 @DiscriminatorValue("300")
 public class RecurringDepositAccount extends SavingsAccount {
@@ -1010,6 +1012,10 @@ public class RecurringDepositAccount extends SavingsAccount {
             final boolean isValidDepositPeriod = this.accountTermAndPreClosure.depositTermDetail()
                     .isDepositBetweenMinAndMax(depositStartDate(), calculateMaturityDate());
             if (!isValidDepositPeriod) {
+                final Integer depositPeriodInDays = this.accountTermAndPreClosure.depositTermDetail().getDepositPeriodInDays(depositPeriod,
+                        depositPeriodFrequencyType);
+                log.error("Recurring Deposit account with invalid deposit period {} {} : {} to {}", depositPeriodInDays,
+                        depositPeriodFrequencyType.getCode(), depositStartDate(), calculateMaturityDate());
                 baseDataValidator.reset().parameter(depositPeriodParamName).value(depositPeriod)
                         .failWithCodeNoParameterAddedToErrorCode("deposit.period.not.between.min.and.max.deposit.term");
             } else {

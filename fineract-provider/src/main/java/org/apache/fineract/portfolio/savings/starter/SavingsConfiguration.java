@@ -43,6 +43,7 @@ import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationsRepository;
+import org.apache.fineract.portfolio.account.domain.AccountTransferRepository;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionRepository;
 import org.apache.fineract.portfolio.account.service.AccountAssociationsReadPlatformService;
 import org.apache.fineract.portfolio.account.service.AccountTransfersReadPlatformService;
@@ -229,7 +230,7 @@ public class SavingsConfiguration {
             ConfigurationDomainService configurationDomainService, HolidayRepositoryWrapper holidayRepository,
             WorkingDaysRepositoryWrapper workingDaysRepository,
             DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository,
-            SavingsAccountDomainService savingsAccountDomainService
+            SavingsAccountDomainService savingsAccountDomainService, AccountTransferRepository accountTransferRepository
 
     ) {
         return new DepositAccountWritePlatformServiceJpaRepositoryImpl(context, savingAccountRepositoryWrapper,
@@ -238,7 +239,7 @@ public class SavingsConfiguration {
                 depositAccountDomainService, noteRepository, accountTransfersReadPlatformService, chargeRepository,
                 savingsAccountChargeRepository, accountAssociationsReadPlatformService, accountTransfersWritePlatformService,
                 calendarInstanceRepository, configurationDomainService, holidayRepository, workingDaysRepository,
-                depositAccountOnHoldTransactionRepository, savingsAccountDomainService);
+                depositAccountOnHoldTransactionRepository, savingsAccountDomainService, accountTransferRepository);
     }
 
     @Bean
