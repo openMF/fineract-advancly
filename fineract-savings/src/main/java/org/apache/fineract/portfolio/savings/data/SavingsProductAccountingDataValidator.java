@@ -35,7 +35,7 @@ public class SavingsProductAccountingDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
 
-    public void evaluateAccountingDataForCreate(final Integer accountingRuleType, final boolean isDormancyActive, final JsonElement element,
+    public void evaluateProductAccountingData(final Integer accountingRuleType, final boolean isDormancyActive, final JsonElement element,
             DataValidatorBuilder baseDataValidator, final DepositAccountType accountType) {
         // GL Accounts for Cash or Accrual Periodic
         if (AccountingValidations.isCashBasedAccounting(accountingRuleType)

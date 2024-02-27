@@ -216,11 +216,11 @@ public final class DepositsApiConstants {
             SavingProductAccountingParams.INCOME_FROM_FEES.getValue(), SavingProductAccountingParams.INCOME_FROM_PENALTIES.getValue(),
             SavingProductAccountingParams.INTEREST_ON_SAVINGS.getValue(), SavingProductAccountingParams.FEES_RECEIVABLE.getValue(),
             SavingProductAccountingParams.PAYMENT_CHANNEL_FUND_SOURCE_MAPPING.getValue(),
-            SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(), SavingProductAccountingParams.SAVINGS_CONTROL.getValue(),
-            SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue(), SavingProductAccountingParams.SAVINGS_REFERENCE.getValue(),
-            SavingProductAccountingParams.FEE_INCOME_ACCOUNT_MAPPING.getValue(),
+            SavingProductAccountingParams.SAVINGS_CONTROL.getValue(), SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue(),
+            SavingProductAccountingParams.SAVINGS_REFERENCE.getValue(), SavingProductAccountingParams.FEE_INCOME_ACCOUNT_MAPPING.getValue(),
             SavingProductAccountingParams.PENALTY_INCOME_ACCOUNT_MAPPING.getValue(),
-            SavingProductAccountingParams.INTEREST_PAYABLE.getValue(), chartsParamName, SavingsApiConstants.withHoldTaxParamName,
+            SavingProductAccountingParams.INTEREST_PAYABLE.getValue(), SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(),
+            SavingProductAccountingParams.FEES_RECEIVABLE.getValue(), chartsParamName, SavingsApiConstants.withHoldTaxParamName,
             SavingsApiConstants.taxGroupIdParamName));
 
     private static final Set<String> PRECLOSURE_REQUEST_DATA_PARAMETERS = new HashSet<>(

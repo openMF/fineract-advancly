@@ -141,6 +141,10 @@ public final class SavingsEnumerations {
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.WITHDRAWAL.getValue().longValue(),
                         SavingsAccountTransactionType.WITHDRAWAL.getCode(), "Withdrawal");
             break;
+            case ACCRUAL:
+                optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ACCRUAL.getValue().longValue(),
+                        SavingsAccountTransactionType.ACCRUAL.getCode(), "Accrual");
+            break;
             case INTEREST_POSTING:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.INTEREST_POSTING.getValue().longValue(),
                         SavingsAccountTransactionType.INTEREST_POSTING.getCode(), "Interest posting");
@@ -156,10 +160,6 @@ public final class SavingsEnumerations {
             case APPROVE_TRANSFER:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.APPROVE_TRANSFER.getValue().longValue(),
                         SavingsAccountTransactionType.APPROVE_TRANSFER.getCode(), "Transfer approved");
-            break;
-            case ACCRUAL:
-                optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ACCRUAL.getValue().longValue(),
-                        SavingsAccountTransactionType.ACCRUAL.getCode(), "Accrual");
             break;
             case INITIATE_TRANSFER:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.INITIATE_TRANSFER.getValue().longValue(),

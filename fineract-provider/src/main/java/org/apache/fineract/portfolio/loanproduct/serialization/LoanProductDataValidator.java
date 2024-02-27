@@ -611,7 +611,8 @@ public final class LoanProductDataValidator {
         final Integer accountingRuleType = this.fromApiJsonHelper.extractIntegerNamed(ACCOUNTING_RULE, element, Locale.getDefault());
         baseDataValidator.reset().parameter(ACCOUNTING_RULE).value(accountingRuleType).notNull().inMinMaxRange(1, 4);
 
-        if (AccountingValidations.isCashOrAccrualBasedAccounting(accountingRuleType)) {
+        if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
+                || AccountingValidations.isAccrualBasedAccounting(accountingRuleType)) {
 
             final Long fundAccountId = this.fromApiJsonHelper.extractLongNamed(LoanProductAccountingParams.FUND_SOURCE.getValue(), element);
             baseDataValidator.reset().parameter(LoanProductAccountingParams.FUND_SOURCE.getValue()).value(fundAccountId).notNull()

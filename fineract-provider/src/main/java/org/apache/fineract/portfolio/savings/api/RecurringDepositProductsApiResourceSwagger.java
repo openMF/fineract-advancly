@@ -348,7 +348,7 @@ final class RecurringDepositProductsApiResourceSwagger {
             private GetRecurringDepositProductsGlAccount() {}
 
             @Schema(example = "12")
-            public Integer id;
+            public Long id;
             @Schema(example = "savings control")
             public String name;
             @Schema(example = "2000001")

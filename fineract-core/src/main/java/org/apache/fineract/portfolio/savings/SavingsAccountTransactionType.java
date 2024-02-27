@@ -39,7 +39,7 @@ public enum SavingsAccountTransactionType {
     ANNUAL_FEE(5, "savingsAccountTransactionType.annualFee", TransactionEntryType.DEBIT), //
     WAIVE_CHARGES(6, "savingsAccountTransactionType.waiveCharge"), //
     PAY_CHARGE(7, "savingsAccountTransactionType.payCharge", TransactionEntryType.DEBIT), //
-    DIVIDEND_PAYOUT(8, "savingsAccountTransactionType.dividendPayout"), //
+    DIVIDEND_PAYOUT(8, "savingsAccountTransactionType.dividendPayout", TransactionEntryType.CREDIT), //
     ACCRUAL(10, "savingsAccountTransactionType.accrual"), //
     INITIATE_TRANSFER(12, "savingsAccountTransactionType.initiateTransfer"), //
     APPROVE_TRANSFER(13, "savingsAccountTransactionType.approveTransfer"), //

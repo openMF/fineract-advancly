@@ -40,6 +40,7 @@ public class SavingsProductHelper {
     private static final Gson GSON = new JSON().getGson();
     private static final String SAVINGS_PRODUCT_URL = "/fineract-provider/api/v1/savingsproducts";
     private static final String CREATE_SAVINGS_PRODUCT_URL = SAVINGS_PRODUCT_URL + "?" + Utils.TENANT_IDENTIFIER;
+    private static final Gson GSON = new JSON().getGson();
 
     private static final String LOCALE = "en_GB";
     private static final String DIGITS_AFTER_DECIMAL = "4";
@@ -59,7 +60,7 @@ public class SavingsProductHelper {
     private static final String DAYS_365 = "365";
     private static final String NONE = "1";
     private static final String CASH_BASED = "2";
-    private static final String ACCRUAL_BASED = "3";
+    private static final String ACCRUAL_PERIODIC = "3";
 
     private String nameOfSavingsProduct = Utils.uniqueRandomStringGenerator("SAVINGS_PRODUCT_", 6);
     private String shortName = Utils.uniqueRandomStringGenerator("", 4);
@@ -147,7 +148,7 @@ public class SavingsProductHelper {
         if (this.accountingRule.equals(CASH_BASED)) {
             map.putAll(getAccountMappingForCashBased());
         }
-        if (this.accountingRule.equals(ACCRUAL_BASED)) {
+        if (this.accountingRule.equals(ACCRUAL_PERIODIC)) {
             map.putAll(getAccountMappingForAccrualBased());
         }
         if (this.isDormancyTrackingActive) {
@@ -220,6 +221,12 @@ public class SavingsProductHelper {
 
     public SavingsProductHelper withAccountingRuleAsNone() {
         this.accountingRule = NONE;
+        return this;
+    }
+
+    public SavingsProductHelper withAccountingRuleAsAccrualBased(final Account[] account_list) {
+        this.accountingRule = ACCRUAL_PERIODIC;
+        this.accountList = account_list;
         return this;
     }
 
@@ -327,8 +334,8 @@ public class SavingsProductHelper {
                     final String ID = this.accountList[i].getAccountID().toString();
                     map.put("savingsReferenceAccountId", ID);
                     map.put("overdraftPortfolioControlId", ID);
-                    map.put("feeReceivableAccountId", ID);
-                    map.put("penaltyReceivableAccountId", ID);
+                    map.put("feesReceivableAccountId", ID);
+                    map.put("penaltiesReceivableAccountId", ID);
                 }
                 if (this.accountList[i].getAccountType().equals(Account.AccountType.LIABILITY)) {
                     final String ID = this.accountList[i].getAccountID().toString();
@@ -380,4 +387,13 @@ public class SavingsProductHelper {
         this.daysToEscheat = "90";
         return this;
     }
+
+    public static GetSavingsProductsProductIdResponse getSavingsProductById(final RequestSpecification requestSpec,
+            final ResponseSpecification responseSpec, final Integer productId) {
+        LOG.info("-------------------- RETRIEVING SAVINGS DEPOSIT PRODUCT BY ID --------------------------");
+        final String GET_PRODUCT_BY_ID_URL = SAVINGS_PRODUCT_URL + "/" + productId + "?" + Utils.TENANT_IDENTIFIER;
+        final String response = Utils.performServerGet(requestSpec, responseSpec, GET_PRODUCT_BY_ID_URL);
+        return GSON.fromJson(response, GetSavingsProductsProductIdResponse.class);
+    }
+
 }

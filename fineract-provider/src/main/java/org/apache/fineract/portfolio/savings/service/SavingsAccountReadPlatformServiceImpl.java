@@ -616,7 +616,6 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     final BigDecimal outstandingChargeAmount = null;
                     final BigDecimal runningBalance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "runningBalance");
                     final boolean reversed = rs.getBoolean("reversed");
-                    final boolean isManualTransaction = rs.getBoolean("manualTransaction");
                     final Long officeId = rs.getLong("officeId");
                     final BigDecimal cumulativeBalance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "cumulativeBalance");
 

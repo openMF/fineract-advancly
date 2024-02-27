@@ -323,7 +323,7 @@ final class FixedDepositProductsApiResourceSwagger {
             private GetFixedDepositProductsGlAccount() {}
 
             @Schema(example = "12")
-            public Integer id;
+            public Long id;
             @Schema(example = "savings ref")
             public String name;
             @Schema(example = "20")

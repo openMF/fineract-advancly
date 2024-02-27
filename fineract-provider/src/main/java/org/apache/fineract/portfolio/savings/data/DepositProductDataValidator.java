@@ -301,7 +301,7 @@ public class DepositProductDataValidator {
 
         if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
                 || AccountingValidations.isAccrualPeriodicBasedAccounting(accountingRuleType)) {
-            savingsProductAccountingDataValidator.evaluateAccountingDataForCreate(accountingRuleType, isDormancyActive, element,
+            savingsProductAccountingDataValidator.evaluateProductAccountingData(accountingRuleType, isDormancyActive, element,
                     baseDataValidator, accountType);
         }
 

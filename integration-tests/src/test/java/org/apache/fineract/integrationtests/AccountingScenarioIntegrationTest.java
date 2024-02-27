@@ -48,6 +48,8 @@ import java.util.TimeZone;
 import org.apache.fineract.client.models.GetRecurringDepositProductsProductIdResponse;
 import org.apache.fineract.client.models.GetSavingsProductsProductIdResponse;
 import org.apache.fineract.client.models.GetJournalEntriesTransactionIdResponse;
+import org.apache.fineract.client.models.GetRecurringDepositProductsProductIdResponse;
+import org.apache.fineract.client.models.GetSavingsProductsProductIdResponse;
 import org.apache.fineract.integrationtests.common.ClientHelper;
 import org.apache.fineract.integrationtests.common.CollateralManagementHelper;
 import org.apache.fineract.integrationtests.common.CommonConstants;
@@ -687,6 +689,15 @@ public class AccountingScenarioIntegrationTest {
         return RecurringDepositAccountHelper.applyRecurringDepositApplication(recurringDepositApplicationJSON, requestSpec, responseSpec);
     }
 
+    public static Integer createSavingsProductWithAccrualAccounting(final String minOpenningBalance, final Account... accounts) {
+        LOG.info("------------------------------CREATING NEW SAVINGS PRODUCT ---------------------------------------");
+        final String savingsProductJSON = new SavingsProductHelper().withInterestCompoundingPeriodTypeAsDaily() //
+                .withInterestPostingPeriodTypeAsQuarterly() //
+                .withInterestCalculationPeriodTypeAsDailyBalance() //
+                .withMinimumOpenningBalance(minOpenningBalance).withAccountingRuleAsAccrualBased(accounts).build();
+        return SavingsProductHelper.createSavingsProduct(savingsProductJSON, requestSpec, responseSpec);
+    }
+
     @Test
     public void checkPeriodicAccrualAccountingFlow() throws InterruptedException, ParseException {
         final Account assetAccount = this.accountHelper.createAssetAccount();
@@ -1238,7 +1249,6 @@ public class AccountingScenarioIntegrationTest {
 
     @Test
     public void checkAccountingWithSharingFlow() {
-        this.savingsAccountHelper = new SavingsAccountHelper(requestSpec, responseSpec);
 
         final Account assetAccount = this.accountHelper.createAssetAccount();
         final Account incomeAccount = this.accountHelper.createIncomeAccount();

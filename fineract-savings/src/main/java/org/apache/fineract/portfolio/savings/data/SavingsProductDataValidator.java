@@ -87,7 +87,6 @@ public class SavingsProductDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
     private final SavingsProductAccountingDataValidator savingsProductAccountingDataValidator;
-
     private static final Set<String> SAVINGS_PRODUCT_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             SavingsApiConstants.localeParamName, SavingsApiConstants.monthDayFormatParamName, nameParamName, shortNameParamName,
             descriptionParamName, currencyCodeParamName, digitsAfterDecimalParamName, inMultiplesOfParamName,
@@ -96,14 +95,14 @@ public class SavingsProductDataValidator {
             lockinPeriodFrequencyParamName, lockinPeriodFrequencyTypeParamName, SavingsApiConstants.withdrawalFeeAmountParamName,
             SavingsApiConstants.withdrawalFeeTypeParamName, withdrawalFeeForTransfersParamName, feeAmountParamName, feeOnMonthDayParamName,
             SavingsApiConstants.accountingRuleParamName, SavingsApiConstants.chargesParamName,
-            SavingProductAccountingParams.FEES_RECEIVABLE.getValue(), SavingProductAccountingParams.INCOME_FROM_FEES.getValue(),
-            SavingProductAccountingParams.INCOME_FROM_PENALTIES.getValue(), SavingProductAccountingParams.INTEREST_ON_SAVINGS.getValue(),
-            SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(),
+            SavingProductAccountingParams.INCOME_FROM_FEES.getValue(), SavingProductAccountingParams.INCOME_FROM_PENALTIES.getValue(),
+            SavingProductAccountingParams.INTEREST_ON_SAVINGS.getValue(), SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(),
             SavingProductAccountingParams.PAYMENT_CHANNEL_FUND_SOURCE_MAPPING.getValue(),
             SavingProductAccountingParams.INTEREST_PAYABLE.getValue(), SavingProductAccountingParams.SAVINGS_CONTROL.getValue(),
             SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue(), SavingProductAccountingParams.SAVINGS_REFERENCE.getValue(),
             SavingProductAccountingParams.FEE_INCOME_ACCOUNT_MAPPING.getValue(),
             SavingProductAccountingParams.PENALTY_INCOME_ACCOUNT_MAPPING.getValue(),
+            SavingProductAccountingParams.FEES_RECEIVABLE.getValue(), SavingProductAccountingParams.INTEREST_PAYABLE.getValue(),
             SavingProductAccountingParams.OVERDRAFT_PORTFOLIO_CONTROL.getValue(),
             SavingProductAccountingParams.LOSSES_WRITTEN_OFF.getValue(), SavingProductAccountingParams.INCOME_FROM_INTEREST.getValue(),
             SavingProductAccountingParams.ESCHEAT_LIABILITY.getValue(), isDormancyTrackingActiveParamName, daysToDormancyParamName,
@@ -111,8 +110,7 @@ public class SavingsProductDataValidator {
             nominalAnnualInterestRateOverdraftParamName, minOverdraftForInterestCalculationParamName,
             SavingsApiConstants.minRequiredBalanceParamName, SavingsApiConstants.enforceMinRequiredBalanceParamName,
             SavingsApiConstants.maxAllowedLienLimitParamName, SavingsApiConstants.lienAllowedParamName,
-            minBalanceForInterestCalculationParamName, withHoldTaxParamName, taxGroupIdParamName,
-            SavingsApiConstants.accrualChargesParamName));
+            minBalanceForInterestCalculationParamName, withHoldTaxParamName, taxGroupIdParamName));
 
     public void validateForCreate(final String json) {
 
@@ -239,7 +237,7 @@ public class SavingsProductDataValidator {
             isDormancyActive = false;
         }
 
-        if (null != isDormancyActive && isDormancyActive) {
+        if (isDormancyActive) {
             final Long daysToInact = this.fromApiJsonHelper.extractLongNamed(daysToInactiveParamName, element);
             baseDataValidator.reset().parameter(daysToInactiveParamName).value(daysToInact).notNull().longGreaterThanZero();
 
@@ -261,7 +259,7 @@ public class SavingsProductDataValidator {
 
         if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
                 || AccountingValidations.isAccrualPeriodicBasedAccounting(accountingRuleType)) {
-            savingsProductAccountingDataValidator.evaluateAccountingDataForCreate(accountingRuleType, isDormancyActive, element,
+            savingsProductAccountingDataValidator.evaluateProductAccountingData(accountingRuleType, isDormancyActive, element,
                     baseDataValidator, DepositAccountType.SAVINGS_DEPOSIT);
         }
 
@@ -386,55 +384,20 @@ public class SavingsProductDataValidator {
             baseDataValidator.reset().parameter(feeOnMonthDayParamName).value(monthDayOfAnnualFee).ignoreIfNull();
         }
 
-        final Long savingsControlAccountId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.SAVINGS_CONTROL.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.SAVINGS_CONTROL.getValue()).value(savingsControlAccountId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long savingsReferenceAccountId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.SAVINGS_REFERENCE.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.SAVINGS_REFERENCE.getValue()).value(savingsReferenceAccountId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long transfersInSuspenseAccountId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.TRANSFERS_SUSPENSE.getValue()).value(transfersInSuspenseAccountId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long interestOnSavingsAccountId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.INTEREST_ON_SAVINGS.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.INTEREST_ON_SAVINGS.getValue()).value(interestOnSavingsAccountId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long incomeFromFeeId = this.fromApiJsonHelper.extractLongNamed(SavingProductAccountingParams.INCOME_FROM_FEES.getValue(),
-                element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.INCOME_FROM_FEES.getValue()).value(incomeFromFeeId).ignoreIfNull()
-                .integerGreaterThanZero();
-
-        final Long incomeFromPenaltyId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.INCOME_FROM_PENALTIES.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.INCOME_FROM_PENALTIES.getValue()).value(incomeFromPenaltyId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long overdraftAccountId = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.OVERDRAFT_PORTFOLIO_CONTROL.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.OVERDRAFT_PORTFOLIO_CONTROL.getValue()).value(overdraftAccountId)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long incomeFromInterest = this.fromApiJsonHelper
-                .extractLongNamed(SavingProductAccountingParams.INCOME_FROM_INTEREST.getValue(), element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.INCOME_FROM_INTEREST.getValue()).value(incomeFromInterest)
-                .ignoreIfNull().integerGreaterThanZero();
-
-        final Long writtenoff = this.fromApiJsonHelper.extractLongNamed(SavingProductAccountingParams.LOSSES_WRITTEN_OFF.getValue(),
-                element);
-        baseDataValidator.reset().parameter(SavingProductAccountingParams.LOSSES_WRITTEN_OFF.getValue()).value(writtenoff).ignoreIfNull()
-                .integerGreaterThanZero();
+        // accounting related data validation
+        final Integer accountingRuleType = this.fromApiJsonHelper.extractIntegerNamed("accountingRule", element, Locale.getDefault());
+        baseDataValidator.reset().parameter("accountingRule").value(accountingRuleType).notNull().inMinMaxRange(1, 3);
 
         // dormancy
         final Boolean isDormancyActive = this.fromApiJsonHelper.parameterExists(isDormancyTrackingActiveParamName, element)
                 ? this.fromApiJsonHelper.extractBooleanNamed(isDormancyTrackingActiveParamName, element)
                 : product.isDormancyTrackingActive();
+
+        if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
+                || AccountingValidations.isAccrualPeriodicBasedAccounting(accountingRuleType)) {
+            savingsProductAccountingDataValidator.evaluateProductAccountingData(accountingRuleType, isDormancyActive, element,
+                    baseDataValidator, DepositAccountType.SAVINGS_DEPOSIT);
+        }
 
         if (null != isDormancyActive && isDormancyActive) {
             final Long daysToInact = this.fromApiJsonHelper.parameterExists(daysToInactiveParamName, element)
@@ -465,8 +428,6 @@ public class SavingsProductDataValidator {
             }
         }
 
-        savingsProductAccountingDataValidator.validatePaymentChannelFundSourceMappings(baseDataValidator, element);
-        savingsProductAccountingDataValidator.validateChargeToIncomeAccountMappings(baseDataValidator, element);
         validateOverdraftParams(baseDataValidator, element);
 
         if (this.fromApiJsonHelper.parameterExists(minBalanceForInterestCalculationParamName, element)) {

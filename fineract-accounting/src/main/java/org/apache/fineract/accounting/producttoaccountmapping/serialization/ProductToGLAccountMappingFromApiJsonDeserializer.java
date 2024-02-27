@@ -83,7 +83,8 @@ public final class ProductToGLAccountMappingFromApiJsonDeserializer {
         final Integer accountingRuleType = this.fromApiJsonHelper.extractIntegerNamed("accountingRule", element, Locale.getDefault());
         baseDataValidator.reset().parameter("accountingRule").value(accountingRuleType).notNull().inMinMaxRange(1, 4);
 
-        if (AccountingValidations.isCashBasedAccounting(accountingRuleType)) {
+        if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
+                || AccountingValidations.isAccrualBasedAccounting(accountingRuleType)) {
 
             final Long fundAccountId = this.fromApiJsonHelper.extractLongNamed(LoanProductAccountingParams.FUND_SOURCE.getValue(), element);
             baseDataValidator.reset().parameter(LoanProductAccountingParams.FUND_SOURCE.getValue()).value(fundAccountId).notNull()
@@ -168,7 +169,9 @@ public final class ProductToGLAccountMappingFromApiJsonDeserializer {
                 Locale.getDefault());
         baseDataValidator.reset().parameter(accountingRuleParamName).value(accountingRuleType).notNull().inMinMaxRange(1, 3);
 
-        if (AccountingValidations.isCashOrAccrualBasedAccounting(accountingRuleType)) {
+
+        if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
+                || AccountingValidations.isAccrualBasedAccounting(accountingRuleType)) {
 
             final Long savingsControlAccountId = this.fromApiJsonHelper
                     .extractLongNamed(SavingProductAccountingParams.SAVINGS_CONTROL.getValue(), element);
@@ -233,6 +236,23 @@ public final class ProductToGLAccountMappingFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(SavingProductAccountingParams.FEES_RECEIVABLE.getValue()).value(feeReceivableAccountId)
                     .notNull().integerGreaterThanZero();
 
+            final Long penaltyReceivableAccountId = this.fromApiJsonHelper
+                    .extractLongNamed(SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(), element);
+            baseDataValidator.reset().parameter(SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue())
+                    .value(penaltyReceivableAccountId).notNull().integerGreaterThanZero();
+
+            final Long interestPayableAccountId = this.fromApiJsonHelper
+                    .extractLongNamed(SavingProductAccountingParams.INTEREST_PAYABLE.getValue(), element);
+            baseDataValidator.reset().parameter(SavingProductAccountingParams.INTEREST_PAYABLE.getValue()).value(interestPayableAccountId)
+                    .notNull().integerGreaterThanZero();
+        }
+
+        // Periodic Accrual Accounting aditional GL Accounts
+        if (AccountingValidations.isAccrualBasedAccounting(accountingRuleType)) {
+            final Long feeReceivableAccountId = this.fromApiJsonHelper
+                    .extractLongNamed(SavingProductAccountingParams.FEES_RECEIVABLE.getValue(), element);
+            baseDataValidator.reset().parameter(SavingProductAccountingParams.FEES_RECEIVABLE.getValue()).value(feeReceivableAccountId)
+                    .notNull().integerGreaterThanZero();
             final Long penaltyReceivableAccountId = this.fromApiJsonHelper
                     .extractLongNamed(SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue(), element);
             baseDataValidator.reset().parameter(SavingProductAccountingParams.PENALTIES_RECEIVABLE.getValue())
