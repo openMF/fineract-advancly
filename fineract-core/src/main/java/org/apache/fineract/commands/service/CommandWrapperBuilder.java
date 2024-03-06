@@ -1502,6 +1502,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder adjustAccountTransfer(final Long accountTransferId) {
+        this.actionName = "ADJUST";
+        this.entityName = "ACCOUNTTRANSFER";
+        this.entityId = accountTransferId;
+        this.href = "/accounttransfers";
+        return this;
+    }
+
     public CommandWrapperBuilder createStandingInstruction() {
         this.actionName = "CREATE";
         this.entityName = "STANDINGINSTRUCTION";
@@ -3695,6 +3703,22 @@ public class CommandWrapperBuilder {
         this.entityName = "LOAN";
         this.loanId = loanId;
         this.href = "/loans/" + loanId + "/transactions?command=undoReAge";
+        return this;
+    }
+
+    public CommandWrapperBuilder reAmortize(final Long loanId) {
+        this.actionName = "REAMORTIZE";
+        this.entityName = "LOAN";
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=reAmortize";
+        return this;
+    }
+
+    public CommandWrapperBuilder undoReAmortize(final Long loanId) {
+        this.actionName = "UNDO_REAMORTIZE";
+        this.entityName = "LOAN";
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=undoReAmortize";
         return this;
     }
 

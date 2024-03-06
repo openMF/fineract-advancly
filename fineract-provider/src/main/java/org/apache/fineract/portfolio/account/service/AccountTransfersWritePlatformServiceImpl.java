@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -208,6 +209,35 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         }
 
         return builder.build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult adjust(JsonCommand command) {
+
+        final Long accountTransferId = command.entityId();
+
+        Optional<AccountTransferTransaction> optAccountTransfer = this.accountTransferRepository.findById(accountTransferId);
+        if (!optAccountTransfer.isPresent()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.accounttransfer.was.not.found", "Account transfer was not found");
+        }
+        final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
+
+        AccountTransferTransaction accountTransfer = optAccountTransfer.get();
+        if (accountTransfer.getFromSavingsTransaction() != null) {
+            log.info("Reverse savings transfer from {} {}",
+                    accountTransfer.getFromSavingsTransaction().getSavingsAccount().getAccountNumber(),
+                    accountTransfer.getFromSavingsTransaction().getId());
+            savingsAccountDomainService.reverseTransfer(accountTransfer.getFromSavingsTransaction(), backdatedTxnsAllowedTill);
+        }
+        if (accountTransfer.getToSavingsTransaction() != null) {
+            log.info("Reverse savings transfer to {} {}",
+                    accountTransfer.getFromSavingsTransaction().getSavingsAccount().getAccountNumber(),
+                    accountTransfer.getFromSavingsTransaction().getId());
+            savingsAccountDomainService.reverseTransfer(accountTransfer.getToSavingsTransaction(), backdatedTxnsAllowedTill);
+        }
+
+        return new CommandProcessingResultBuilder().withEntityId(accountTransferId).build();
     }
 
     @Override

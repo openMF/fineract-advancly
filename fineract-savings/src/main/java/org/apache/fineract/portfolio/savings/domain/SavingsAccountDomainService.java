@@ -52,4 +52,6 @@ public interface SavingsAccountDomainService {
             boolean isSavingsInterestPostingAtCurrentPeriodEnd, Integer financialYearBeginningMonth, LocalDate postInterestOnDate,
             boolean backdatedTxnsAllowedTill, boolean postReversals);
 
+    void reverseTransfer(SavingsAccountTransaction savingsTransaction, boolean backdatedTxnsAllowedTill);
+
 }

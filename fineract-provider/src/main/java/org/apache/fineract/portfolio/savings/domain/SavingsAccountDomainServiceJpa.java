@@ -61,6 +61,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     private final ConfigurationDomainService configurationDomainService;
     private final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
+    private final SavingsAccountTransactionSummaryWrapper savingsAccountTransactionSummaryWrapper;
+    private final SavingsHelper savingsHelper;
 
     @Transactional
     @Override
@@ -480,6 +482,17 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             account.getSummary().updateSummaryWithPivotConfig(currency, account.savingsAccountTransactionSummaryWrapper, null,
                     account.savingsAccountTransactions);
         }
+    }
+
+    @Override
+    public void reverseTransfer(SavingsAccountTransaction savingsTransaction, boolean backdatedTxnsAllowedTill) {
+        final SavingsAccount account = savingsTransaction.getSavingsAccount();
+        account.setHelpers(savingsAccountTransactionSummaryWrapper, savingsHelper);
+
+        List<SavingsAccountTransaction> savingsAccountTransactions = new ArrayList<>();
+        savingsAccountTransactions.add(savingsTransaction);
+
+        handleReversal(account, savingsAccountTransactions, backdatedTxnsAllowedTill);
     }
 
 }

@@ -123,8 +123,6 @@ import org.apache.fineract.portfolio.tax.domain.TaxComponent;
 import org.apache.fineract.portfolio.tax.domain.TaxGroup;
 import org.apache.fineract.portfolio.tax.service.TaxUtils;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
@@ -136,8 +134,6 @@ import org.springframework.util.CollectionUtils;
 @DiscriminatorValue("100")
 @SuppressWarnings({ "MemberName" })
 public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SavingsAccount.class);
 
     @Version
     int version;
@@ -2866,7 +2862,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
                 lockedInUntilLocalDate = activationLocalDate.plusYears(this.lockinPeriodFrequency);
             break;
             case WHOLE_TERM:
-                LOG.error("TODO Implement calculateDateAccountIsLockedUntil for WHOLE_TERM");
+                log.error("TODO Implement calculateDateAccountIsLockedUntil for WHOLE_TERM");
             break;
         }
 

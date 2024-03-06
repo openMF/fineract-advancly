@@ -16,15 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.infrastructure.event.business.domain.loan.transaction.reamortization;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionBusinessEvent;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 
-public interface LoanDownPaymentHandlerService {
+public class LoanUndoReAmortizeTransactionBusinessEvent extends LoanTransactionBusinessEvent {
 
-    LoanTransaction handleDownPayment(ScheduleGeneratorDTO scheduleGeneratorDTO, JsonCommand command,
-            LoanTransaction disbursementTransaction, Loan loan);
+    private static final String TYPE = "LoanUndoReAmortizeTransactionBusinessEvent";
+
+    public LoanUndoReAmortizeTransactionBusinessEvent(LoanTransaction value) {
+        super(value);
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }

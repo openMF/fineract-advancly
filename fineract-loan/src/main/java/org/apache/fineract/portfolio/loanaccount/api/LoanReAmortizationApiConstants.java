@@ -16,15 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.portfolio.loanaccount.api;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
+public interface LoanReAmortizationApiConstants {
 
-public interface LoanDownPaymentHandlerService {
-
-    LoanTransaction handleDownPayment(ScheduleGeneratorDTO scheduleGeneratorDTO, JsonCommand command,
-            LoanTransaction disbursementTransaction, Loan loan);
+    String localeParameterName = "locale";
+    String dateFormatParameterName = "dateFormat";
+    String externalIdParameterName = "externalId";
 }
