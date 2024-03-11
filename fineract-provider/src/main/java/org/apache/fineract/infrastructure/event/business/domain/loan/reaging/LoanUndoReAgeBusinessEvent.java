@@ -16,28 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.dataqueries.data;
+package org.apache.fineract.infrastructure.event.business.domain.loan.reaging;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBusinessEvent;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
-@Getter
-@AllArgsConstructor
-public final class ReportParameterJoinData {
+public class LoanUndoReAgeBusinessEvent extends LoanBusinessEvent {
 
-    private final Long reportId;
-    private final String reportName;
-    private final String reportType;
-    private final String reportSubType;
-    private final String reportCategory;
-    private final String description;
-    private final String reportSql;
-    private final Boolean coreReport;
-    private final Boolean useReport;
+    private static final String TYPE = "LoanUndoReAgeBusinessEvent";
 
-    private final Long reportParameterId;
-    private final Long parameterId;
-    private final String reportParameterName;
-    private final String parameterName;
+    public LoanUndoReAgeBusinessEvent(Loan value) {
+        super(value);
+    }
 
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }
