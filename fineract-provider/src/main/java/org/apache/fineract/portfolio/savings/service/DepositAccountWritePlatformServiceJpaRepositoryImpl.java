@@ -107,6 +107,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.savings.exception.DepositAccountTransactionNotAllowedException;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountTransactionNotFoundException;
+import org.apache.fineract.portfolio.savings.exception.SavingsDepositsWithActiveTransferFundsException;
 import org.apache.fineract.portfolio.savings.exception.TransactionUpdateNotAllowedException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.transaction.annotation.Transactional;
@@ -234,9 +235,9 @@ public class DepositAccountWritePlatformServiceJpaRepositoryImpl implements Depo
                 DepositAccountType.FIXED_DEPOSIT);
         checkClientOrGroupActive(account);
 
-        if (accountTransferRepository.countByFromSavingsAccountId(account.getId()) > 0) {
-            throw new PlatformServiceUnavailableException("error.msg.deposit.account.undo.activate.not.allowed", "Fixed deposit account "
-                    + account.getAccountNumber() + " undo activate not allowed as it involves some account transfers", savingsId);
+        final Long pendingTransactionId = accountTransferRepository.fetchIdByFromSavingsAccountId(account.getId());
+        if (pendingTransactionId != null) {
+            throw new SavingsDepositsWithActiveTransferFundsException(account.getAccountNumber(), pendingTransactionId);
         }
 
         final Set<Long> existingTransactionIds = new HashSet<>();
@@ -266,11 +267,9 @@ public class DepositAccountWritePlatformServiceJpaRepositoryImpl implements Depo
                 DepositAccountType.RECURRING_DEPOSIT);
         checkClientOrGroupActive(account);
 
-        if (accountTransferRepository.countByFromSavingsAccountId(account.getId()) > 0) {
-            throw new PlatformServiceUnavailableException("error.msg.deposit.account.undo.activate.not.allowed",
-                    "Recurring deposit account " + account.getAccountNumber()
-                            + " undo activate not allowed as it involves some account transfers",
-                    savingsId);
+        final Long pendingTransactionId = accountTransferRepository.fetchIdByFromSavingsAccountId(account.getId());
+        if (pendingTransactionId != null) {
+            throw new SavingsDepositsWithActiveTransferFundsException(account.getAccountNumber(), pendingTransactionId);
         }
 
         final Map<String, Object> changes = account.undoActivate();

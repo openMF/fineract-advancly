@@ -224,18 +224,20 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
 
         AccountTransferTransaction accountTransfer = optAccountTransfer.get();
+        if (accountTransfer.getToSavingsTransaction() != null) {
+            log.info("Reverse savings transfer to {} {}", accountTransfer.getToSavingsTransaction().getSavingsAccount().getAccountNumber(),
+                    accountTransfer.getToSavingsTransaction().getId());
+            savingsAccountDomainService.reverseTransfer(accountTransfer.getToSavingsTransaction(), backdatedTxnsAllowedTill);
+        }
         if (accountTransfer.getFromSavingsTransaction() != null) {
             log.info("Reverse savings transfer from {} {}",
                     accountTransfer.getFromSavingsTransaction().getSavingsAccount().getAccountNumber(),
                     accountTransfer.getFromSavingsTransaction().getId());
             savingsAccountDomainService.reverseTransfer(accountTransfer.getFromSavingsTransaction(), backdatedTxnsAllowedTill);
         }
-        if (accountTransfer.getToSavingsTransaction() != null) {
-            log.info("Reverse savings transfer to {} {}",
-                    accountTransfer.getFromSavingsTransaction().getSavingsAccount().getAccountNumber(),
-                    accountTransfer.getFromSavingsTransaction().getId());
-            savingsAccountDomainService.reverseTransfer(accountTransfer.getToSavingsTransaction(), backdatedTxnsAllowedTill);
-        }
+
+        accountTransfer.reverse();
+        this.accountTransferRepository.save(accountTransfer);
 
         return new CommandProcessingResultBuilder().withEntityId(accountTransferId).build();
     }

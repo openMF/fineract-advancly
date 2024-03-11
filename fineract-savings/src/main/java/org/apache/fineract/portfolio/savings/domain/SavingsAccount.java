@@ -117,6 +117,7 @@ import org.apache.fineract.portfolio.savings.exception.SavingsAccountTransaction
 import org.apache.fineract.portfolio.savings.exception.SavingsActivityPriorToClientTransferException;
 import org.apache.fineract.portfolio.savings.exception.SavingsOfficerAssignmentDateException;
 import org.apache.fineract.portfolio.savings.exception.SavingsOfficerUnassignmentDateException;
+import org.apache.fineract.portfolio.savings.exception.SavingsTransferTransactionsAlreadyUndoneException;
 import org.apache.fineract.portfolio.savings.exception.SavingsTransferTransactionsCannotBeUndoneException;
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
 import org.apache.fineract.portfolio.tax.domain.TaxComponent;
@@ -2335,7 +2336,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
     public void undoTransaction(final SavingsAccountTransaction transactionToUndo) {
 
         if (transactionToUndo.isReversed()) {
-            throw new SavingsAccountTransactionNotFoundException(this.getId(), transactionToUndo.getId());
+            throw new SavingsTransferTransactionsAlreadyUndoneException(getAccountNumber(), transactionToUndo.getId());
         }
 
         validateAttemptToUndoTransferRelatedTransactions(transactionToUndo);
