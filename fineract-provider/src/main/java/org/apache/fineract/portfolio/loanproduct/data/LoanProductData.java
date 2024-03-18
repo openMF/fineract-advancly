@@ -89,6 +89,7 @@ public class LoanProductData implements Serializable {
     private final Integer maxNumberOfRepayments;
     private final Integer repaymentEvery;
     private final EnumOptionData repaymentFrequencyType;
+    private final Integer fixedLength;
     private final BigDecimal interestRatePerPeriod;
     private final BigDecimal minInterestRatePerPeriod;
     private final BigDecimal maxInterestRatePerPeriod;
@@ -238,6 +239,7 @@ public class LoanProductData implements Serializable {
         final Integer minNumberOfRepayments = null;
         final Integer maxNumberOfRepayments = null;
         final Integer repaymentEvery = null;
+        final Integer fixedLength = null;
         final BigDecimal interestRatePerPeriod = null;
         final BigDecimal minInterestRatePerPeriod = null;
         final BigDecimal maxInterestRatePerPeriod = null;
@@ -343,7 +345,7 @@ public class LoanProductData implements Serializable {
                 fixedPrincipalPercentagePerInstallment, delinquencyBucketOptions, delinquencyBucket, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
                 paymentAllocation, creditAllocation, repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType,
-                loanScheduleProcessingType, allowAccrualPostingInArrears);
+                loanScheduleProcessingType, fixedLength, allowAccrualPostingInArrears);
 
     }
 
@@ -358,6 +360,7 @@ public class LoanProductData implements Serializable {
         final Integer minNumberOfRepayments = null;
         final Integer maxNumberOfRepayments = null;
         final Integer repaymentEvery = null;
+        final Integer fixedLength = null;
         final BigDecimal interestRatePerPeriod = null;
         final BigDecimal minInterestRatePerPeriod = null;
         final BigDecimal maxInterestRatePerPeriod = null;
@@ -463,7 +466,7 @@ public class LoanProductData implements Serializable {
                 fixedPrincipalPercentagePerInstallment, delinquencyBucketOptions, delinquencyBucket, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
                 paymentAllocation, creditAllocation, repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType,
-                loanScheduleProcessingType, allowAccrualPostingInArrears);
+                loanScheduleProcessingType, fixedLength, allowAccrualPostingInArrears);
 
     }
 
@@ -482,6 +485,7 @@ public class LoanProductData implements Serializable {
         final Integer maxNumberOfRepayments = null;
 
         final Integer repaymentEvery = null;
+        final Integer fixedLength = null;
         final BigDecimal interestRatePerPeriod = null;
         final BigDecimal minInterestRatePerPeriod = null;
         final BigDecimal maxInterestRatePerPeriod = null;
@@ -590,7 +594,7 @@ public class LoanProductData implements Serializable {
                 fixedPrincipalPercentagePerInstallment, delinquencyBucketOptions, delinquencyBucket, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
                 paymentAllocation, creditAllocation, repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType,
-                loanScheduleProcessingType, allowAccrualPostingInArrears);
+                loanScheduleProcessingType, fixedLength, allowAccrualPostingInArrears);
 
     }
 
@@ -611,6 +615,7 @@ public class LoanProductData implements Serializable {
         final Integer maxNumberOfRepayments = null;
 
         final Integer repaymentEvery = null;
+        final Integer fixedLength = null;
         final BigDecimal interestRatePerPeriod = null;
         final BigDecimal minInterestRatePerPeriod = null;
         final BigDecimal maxInterestRatePerPeriod = null;
@@ -711,7 +716,7 @@ public class LoanProductData implements Serializable {
                 fixedPrincipalPercentagePerInstallment, delinquencyBucketOptions, delinquencyBucket, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
                 paymentAllocation, creditAllocationData, repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType,
-                loanScheduleProcessingType, allowAccrualPostingInArrears);
+                loanScheduleProcessingType, fixedLength, allowAccrualPostingInArrears);
     }
 
     public static LoanProductData withAccountingDetails(final LoanProductData productData, final Map<String, Object> accountingMappings,
@@ -761,7 +766,7 @@ public class LoanProductData implements Serializable {
             final BigDecimal disbursedAmountPercentageForDownPayment, final boolean enableAutoRepaymentForDownPayment,
             final Collection<AdvancedPaymentData> paymentAllocation, final Collection<CreditAllocationData> creditAllocation,
             final EnumOptionData repaymentStartDateType, final boolean enableInstallmentLevelDelinquency,
-            final EnumOptionData loanScheduleType, final EnumOptionData loanScheduleProcessingType,
+            final EnumOptionData loanScheduleType, final EnumOptionData loanScheduleProcessingType, final Integer fixedLength,
             final boolean allowAccrualPostingInArrears) {
         this.id = id;
         this.name = name;
@@ -781,6 +786,7 @@ public class LoanProductData implements Serializable {
         this.graceOnInterestPayment = graceOnInterestPayment;
         this.graceOnInterestCharged = graceOnInterestCharged;
         this.repaymentEvery = repaymentEvery;
+        this.fixedLength = fixedLength;
         this.interestRatePerPeriod = interestRatePerPeriod;
         this.minInterestRatePerPeriod = minInterestRatePerPeriod;
         this.maxInterestRatePerPeriod = maxInterestRatePerPeriod;
@@ -936,6 +942,7 @@ public class LoanProductData implements Serializable {
         this.minNumberOfRepayments = productData.minNumberOfRepayments;
         this.maxNumberOfRepayments = productData.maxNumberOfRepayments;
         this.repaymentEvery = productData.repaymentEvery;
+        this.fixedLength = productData.fixedLength;
         this.interestRatePerPeriod = productData.interestRatePerPeriod;
         this.minInterestRatePerPeriod = productData.minInterestRatePerPeriod;
         this.maxInterestRatePerPeriod = productData.maxInterestRatePerPeriod;

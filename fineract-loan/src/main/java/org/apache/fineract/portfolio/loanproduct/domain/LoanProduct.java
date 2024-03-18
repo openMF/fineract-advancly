@@ -434,6 +434,7 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final boolean allowAccrualPostingInArrears = command
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ALLOW_ACCRUAL_POSTING_IN_ARREARS);
+        final Integer fixedLength = command.integerValueOfParameterNamed(LoanProductConstants.FIXED_LENGTH);
 
         return new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules, loanProductCreditAllocationRules,
                 name, shortName, description, currency, principal, minPrincipal, maxPrincipal, interestRatePerPeriod,
@@ -453,7 +454,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
                 allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
-                repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType,
+                repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType, fixedLength,
                 allowAccrualPostingInArrears);
 
     }
@@ -671,7 +672,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean enableDownPayment, final BigDecimal disbursedAmountPercentageForDownPayment,
             final boolean enableAutoRepaymentForDownPayment, final RepaymentStartDateType repaymentStartDateType,
             final boolean enableInstallmentLevelDelinquency, final LoanScheduleType loanScheduleType,
-            final LoanScheduleProcessingType loanScheduleProcessingType, final boolean allowAccrualPostingInArrears) {
+            final LoanScheduleProcessingType loanScheduleProcessingType, final Integer fixedLength, final boolean allowAccrualPostingInArrears) {
         this.fund = fund;
         this.transactionProcessingStrategyCode = transactionProcessingStrategyCode;
 
@@ -720,7 +721,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
                 inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(), daysInYearType.getValue(),
                 isInterestRecalculationEnabled, isEqualAmortization, enableDownPayment, disbursedAmountPercentageForDownPayment,
-                enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType);
+                enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType, fixedLength);
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 
@@ -1377,6 +1378,12 @@ public class LoanProduct extends AbstractPersistableCustom {
                     .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY);
             actualChanges.put(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, newValue);
             this.updateEnableInstallmentLevelDelinquency(newValue);
+        }
+
+        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.FIXED_LENGTH, loanProductRelatedDetail.getFixedLength())) {
+            final Integer newValue = command.integerValueOfParameterNamed(LoanProductConstants.FIXED_LENGTH);
+            actualChanges.put(LoanProductConstants.FIXED_LENGTH, newValue);
+            loanProductRelatedDetail.setFixedLength(newValue);
         }
 
         return actualChanges;
