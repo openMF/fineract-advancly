@@ -54,4 +54,8 @@ public interface SavingsAccountDomainService {
 
     void reverseTransfer(SavingsAccountTransaction savingsTransaction, boolean backdatedTxnsAllowedTill);
 
+    void undoTransaction(SavingsAccount account, SavingsAccountTransaction savingsAccountTransaction);
+
+    void checkClientOrGroupActive(SavingsAccount account);
+
 }
