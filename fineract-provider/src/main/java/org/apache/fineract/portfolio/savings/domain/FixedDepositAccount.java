@@ -851,7 +851,7 @@ public class FixedDepositAccount extends SavingsAccount {
 
     @Override
     public boolean allowModify() {
-        return false;
+        return true;
     }
 
     @Override
