@@ -2297,7 +2297,9 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
 
         // Undo Transactions
         for (SavingsAccountTransaction transaction : getTransactions()) {
-            undoTransaction(transaction);
+            if (!transaction.isReversed()) {
+                undoTransaction(transaction);
+            }
         }
 
         return actualChanges;
