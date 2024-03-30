@@ -19,8 +19,7 @@
 package org.apache.fineract.portfolio.savings.jobs.addaccrualtransactionforsavings;
 
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountChargeReadPlatformService;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
+import org.apache.fineract.portfolio.savings.service.SavingsAccrualWritePlatformService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -40,9 +39,7 @@ public class AddAccrualTransactionForSavingsConfig {
     @Autowired
     private PlatformTransactionManager transactionManager;
     @Autowired
-    private SavingsAccountChargeReadPlatformService savingsAccountChargeReadPlatformService;
-    @Autowired
-    private SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+    private SavingsAccrualWritePlatformService savingsAccrualWritePlatformService;
 
     @Bean
     protected Step addAccrualTransactionForSavingsStep() {
@@ -58,6 +55,6 @@ public class AddAccrualTransactionForSavingsConfig {
 
     @Bean
     public AddAccrualTransactionForSavingsTasklet addAccrualTransactionForSavingsTasklet() {
-        return new AddAccrualTransactionForSavingsTasklet(savingsAccountChargeReadPlatformService, savingsAccountWritePlatformService);
+        return new AddAccrualTransactionForSavingsTasklet(savingsAccrualWritePlatformService);
     }
 }

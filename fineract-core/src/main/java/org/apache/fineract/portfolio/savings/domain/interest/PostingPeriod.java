@@ -547,4 +547,8 @@ public final class PostingPeriod {
         return this.financialYearBeginningMonth;
     }
 
+    public List<CompoundingPeriod> getCompoundingPeriods() {
+        return compoundingPeriods;
+    }
+
 }

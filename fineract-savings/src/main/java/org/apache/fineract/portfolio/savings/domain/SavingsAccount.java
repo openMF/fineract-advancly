@@ -70,6 +70,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -128,6 +130,8 @@ import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Entity
+@Getter
+@Setter
 @Table(name = "m_savings_account", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "sa_account_no_UNIQUE"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "sa_external_id_UNIQUE") })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -334,6 +338,9 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
     @ManyToOne
     @JoinColumn(name = "tax_group_id")
     private TaxGroup taxGroup;
+
+    @Column(name = "accrued_till_date")
+    protected LocalDate accruedTillDate;
 
     @Column(name = "total_savings_amount_on_hold", scale = 6, precision = 19, nullable = true)
     private BigDecimal savingsOnHoldAmount;
@@ -793,8 +800,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
         return this.nominalAnnualInterestRateOverdraft.divide(BigDecimal.valueOf(100L), mc);
     }
 
-    @SuppressWarnings("unused")
-    protected BigDecimal getEffectiveInterestRateAsFraction(final MathContext mc, final LocalDate upToInterestCalculationDate) {
+    public BigDecimal getEffectiveInterestRateAsFraction(final MathContext mc, final LocalDate upToInterestCalculationDate) {
         return this.nominalAnnualInterestRate.divide(BigDecimal.valueOf(100L), mc);
     }
 
@@ -806,6 +812,20 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
         return isAllowOverdraft() && !MathUtil.isEmpty(getOverdraftLimit()) && !MathUtil.isEmpty(nominalAnnualInterestRateOverdraft);
     }
 
+    public List<SavingsAccountTransaction> retreiveOrderedAccrualTransactions() {
+        final List<SavingsAccountTransaction> listOfTransactionsSorted = retrieveListOfTransactions();
+
+        final List<SavingsAccountTransaction> orderedAccrualTransactions = new ArrayList<>();
+
+        for (final SavingsAccountTransaction transaction : listOfTransactionsSorted) {
+            if (transaction.isAccrual()) {
+                orderedAccrualTransactions.add(transaction);
+            }
+        }
+        orderedAccrualTransactions.sort(new SavingsAccountTransactionComparator());
+        return orderedAccrualTransactions;
+    }
+
     protected List<SavingsAccountTransaction> retreiveOrderedNonInterestPostingTransactions() {
         final List<SavingsAccountTransaction> listOfTransactionsSorted = retrieveListOfTransactions();
 
@@ -813,7 +833,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
 
         for (final SavingsAccountTransaction transaction : listOfTransactionsSorted) {
             if (!(transaction.isInterestPostingAndNotReversed() || transaction.isOverdraftInterestAndNotReversed())
-                    && transaction.isNotReversed() && !transaction.isReversalTransaction()) {
+                    && transaction.isNotReversed() && !transaction.isReversalTransaction() && !transaction.isAccrual()) {
                 orderedNonInterestPostingTransactions.add(transaction);
             }
         }
@@ -2639,7 +2659,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
         this.closedOnDate = null;
         this.closedBy = null;
         this.activatedOnDate = null;
-        this.activatedBy = currentUser;
+        this.activatedBy = null;
         this.lockedInUntilDate = calculateDateAccountIsLockedUntil(getActivationDate());
 
         if (this.client != null && this.client.isActivatedAfter(operationDate)) {
@@ -3902,4 +3922,11 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom {
                 .map(transaction -> transaction.toSavingsAccountTransactionDetailsForPostingPeriod(this.currency, this.allowOverdraft))
                 .toList();
     }
+
+    public List<SavingsAccountTransactionDetailsForPostingPeriod> toSavingsAccountTransactionDetailsForPostingPeriodList() {
+        return retreiveOrderedNonInterestPostingTransactions().stream()
+                .map(transaction -> transaction.toSavingsAccountTransactionDetailsForPostingPeriod(this.currency, this.allowOverdraft))
+                .toList();
+    }
+
 }

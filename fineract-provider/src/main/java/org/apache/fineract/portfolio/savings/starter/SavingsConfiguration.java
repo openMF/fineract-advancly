@@ -145,6 +145,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Configuration
 public class SavingsConfiguration {
@@ -340,11 +341,11 @@ public class SavingsConfiguration {
             SavingsDropdownReadPlatformService dropdownReadPlatformService, ChargeReadPlatformService chargeReadPlatformService,
             EntityDatatableChecksReadService entityDatatableChecksReadService, ColumnValidator columnValidator,
             SavingsAccountAssembler savingAccountAssembler, PaginationHelper paginationHelper, DatabaseSpecificSQLGenerator sqlGenerator,
-            SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
+            SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         return new SavingsAccountReadPlatformServiceImpl(context, jdbcTemplate, clientReadPlatformService, groupReadPlatformService,
                 savingProductReadPlatformService, staffReadPlatformService, dropdownReadPlatformService, chargeReadPlatformService,
                 entityDatatableChecksReadService, columnValidator, savingAccountAssembler, paginationHelper, sqlGenerator,
-                savingsAccountRepositoryWrapper);
+                savingsAccountRepositoryWrapper, namedParameterJdbcTemplate);
     }
 
     @Bean

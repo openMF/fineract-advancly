@@ -569,6 +569,10 @@ public final class SavingsAccountTransaction extends AbstractAuditableWithUTCDat
         return isTransferInitiation() || isTransferApproval() || isTransferRejection() || isTransferWithdrawal();
     }
 
+    public boolean isAccrual() {
+        return getTransactionType().isAccrual();
+    }
+
     public void zeroBalanceFields() {
         this.runningBalance = null;
         this.cumulativeBalance = null;
