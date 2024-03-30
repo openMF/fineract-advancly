@@ -18,49 +18,33 @@
  */
 package org.apache.fineract.portfolio.savings.jobs.addaccrualtransactionforsavings;
 
-import java.util.Collection;
-import java.util.List;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.core.data.ApiParameterError;
-import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.apache.fineract.portfolio.savings.data.SavingsAccountAnnualFeeData;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountChargeReadPlatformService;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
+import org.apache.fineract.infrastructure.core.exception.MultiException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.portfolio.savings.service.SavingsAccrualWritePlatformService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 
-@Slf4j
 @RequiredArgsConstructor
 public class AddAccrualTransactionForSavingsTasklet implements Tasklet {
 
-    private final SavingsAccountChargeReadPlatformService savingsAccountChargeReadPlatformService;
-    private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+    private final SavingsAccrualWritePlatformService savingsAccrualWritePlatformService;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        final Collection<SavingsAccountAnnualFeeData> annualFeeData = savingsAccountChargeReadPlatformService
-                .retrieveChargesWithAnnualFeeDue();
-
-        for (final SavingsAccountAnnualFeeData savingsAccountReference : annualFeeData) {
-            try {
-                savingsAccountWritePlatformService.applyAnnualFee(savingsAccountReference.getId(), savingsAccountReference.getAccountId());
-            } catch (final PlatformApiDataValidationException e) {
-                final List<ApiParameterError> errors = e.getErrors();
-                for (final ApiParameterError error : errors) {
-                    log.error("Add Accrual Transaction failed for account: {} with message {}", savingsAccountReference.getAccountNo(),
-                            error);
-                }
-            } catch (final Exception ex) {
-                log.error("Add Accrual Transaction failed for account: {}", savingsAccountReference.getAccountNo(), ex);
-            }
+        try {
+            addPeriodicAccruals(DateUtils.getBusinessLocalDate());
+        } catch (MultiException e) {
+            throw new JobExecutionException(e);
         }
-
-        log.debug("{}: Records affected by addAccrualTransactionForSavings: {}", ThreadLocalContextUtil.getTenant().getName(),
-                annualFeeData.size());
         return RepeatStatus.FINISHED;
+    }
+
+    private void addPeriodicAccruals(final LocalDate tilldate) throws MultiException {
+        savingsAccrualWritePlatformService.addAccrualEntries(tilldate);
     }
 }
