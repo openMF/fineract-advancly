@@ -134,6 +134,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestRecalculationCompoundingMethod;
@@ -242,9 +243,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "loan_transaction_strategy_name")
     private String transactionProcessingStrategyName;
 
+    // TODO FINERACT-1932-Fineract modularization: Move to fineract-progressive-loan module after removing association
+    // from Loan entity
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanPaymentAllocationRule> paymentAllocationRules = new ArrayList<>();
 
+    // TODO FINERACT-1932-Fineract modularization: Move to fineract-progressive-loan module after removing association
+    // from Loan entity
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanCreditAllocationRule> creditAllocationRules = new ArrayList<>();
 
@@ -712,7 +717,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         ChangedTransactionDetail changedTransactionDetail = null;
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
-        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
         changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                 allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -875,7 +880,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              * Consider removing this block of code or logically completing it for the future by getting the list of
              * affected Transactions
              ***/
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
         }
@@ -943,7 +948,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              * Consider removing this block of code or logically completing it for the future by getting the list of
              * affected Transactions
              ***/
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
         } else {
@@ -1137,7 +1142,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              * Consider removing this block of code or logically completing it for the future by getting the list of
              * affected Transactions
              */
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
         } else {
@@ -1698,7 +1703,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.disbursementDetails.clear();
         }
 
-        if (loanProduct.isMultiDisburseLoan() || loanProduct.canDefineInstallmentAmount()) {
+        if (loanProduct.isMultiDisburseLoan() || loanProduct.isCanDefineInstallmentAmount()) {
             if (command.isChangeInBigDecimalParameterNamed(LoanApiConstants.emiAmountParameterName, this.fixedEmiAmount)) {
                 this.fixedEmiAmount = command.bigDecimalValueOfParameterNamed(LoanApiConstants.emiAmountParameterName);
                 actualChanges.put(LoanApiConstants.emiAmountParameterName, this.fixedEmiAmount);
@@ -2560,7 +2565,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LocalDate actualDisbursementDate, BigDecimal emiAmount, LocalDate nextPossibleRepaymentDate,
             LocalDate rescheduledRepaymentDate) {
         boolean isEmiAmountChanged = false;
-        if ((this.loanProduct.isMultiDisburseLoan() || this.loanProduct.canDefineInstallmentAmount()) && emiAmount != null
+        if ((this.loanProduct.isMultiDisburseLoan() || this.loanProduct.isCanDefineInstallmentAmount()) && emiAmount != null
                 && emiAmount.compareTo(retriveLastEmiAmount()) != 0) {
             if (this.loanProduct.isMultiDisburseLoan()) {
                 final LocalDate dateValue = null;
@@ -2696,7 +2701,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private ChangedTransactionDetail reprocessTransactionForDisbursement() {
         ChangedTransactionDetail changedTransactionDetail = null;
         if (this.loanProduct.isMultiDisburseLoan()) {
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             if (!allNonContraTransactionsPostDisbursement.isEmpty()) {
                 final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                         .determineProcessor(this.transactionProcessingStrategyCode);
@@ -2967,7 +2972,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         Money downPaymentMoney = Money.of(getCurrency(),
                 MathUtil.percentageOf(disbursementTransaction.getAmount(), disbursedAmountPercentageForDownPayment, 19));
-
+        if (getLoanProduct().getInstallmentAmountInMultiplesOf() != null) {
+            downPaymentMoney = Money.roundToMultiplesOf(downPaymentMoney, getLoanProduct().getInstallmentAmountInMultiplesOf());
+        }
         Money adjustedDownPaymentMoney = switch (getLoanProductRelatedDetail().getLoanScheduleType()) {
             // For Cumulative loan: To check whether the loan was overpaid when the disbursement happened and to get the
             // proper amount after the disbursement we are using two balances:
@@ -3369,7 +3376,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             }
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -3429,12 +3436,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return incomePostTransactions;
     }
 
-    private List<LoanTransaction> retrieveListOfTransactionsPostDisbursement() {
+    public List<LoanTransaction> retrieveListOfTransactionsForReprocessing() {
         final List<LoanTransaction> repaymentsOrWaivers = new ArrayList<>();
         List<LoanTransaction> trans = getLoanTransactions();
         for (final LoanTransaction transaction : trans) {
-            if (transaction.isNotReversed() && (transaction.isChargeOff() || transaction.isReAge() || transaction.isReAmortize()
-                    || !transaction.isNonMonetaryTransaction())) {
+            if (transaction.isNotReversed() && !transaction.isAccrual() && (transaction.isChargeOff() || transaction.isReAge()
+                    || transaction.isReAmortize() || !transaction.isNonMonetaryTransaction())) {
                 repaymentsOrWaivers.add(transaction);
             }
         }
@@ -3818,7 +3825,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         loanLifecycleStateMachine.transition(LoanEvent.WRITE_OFF_OUTSTANDING_UNDO, this);
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
-        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
         if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
             regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
         }
@@ -3868,8 +3875,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             if (loanTransaction.isRefund() || loanTransaction.isRefundForActiveLoan()) {
                 totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getAmount(currency));
-            } else if (loanTransaction.isCreditBalanceRefund() || loanTransaction.isChargeback()) {
+            } else if (loanTransaction.isCreditBalanceRefund()) {
                 if (loanTransaction.getPrincipalPortion(currency).isZero()) {
+                    totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getOverPaymentPortion(currency));
+                }
+            } else if (loanTransaction.isChargeback()) {
+                if (loanTransaction.getPrincipalPortion(currency).isZero() && getCreditAllocationRules().stream()
+                        .filter(car -> car.getTransactionType().equals(CreditAllocationTransactionType.CHARGEBACK)).findAny().isEmpty()) {
                     totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getOverPaymentPortion(currency));
                 }
             }
@@ -3972,7 +3984,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             }
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -4178,7 +4190,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return getStatus().isClosedWithOutsandingAmountMarkedForReschedule();
     }
 
-    private boolean isCancelled() {
+    public boolean isCancelled() {
         return isRejected() || isWithdrawn();
     }
 
@@ -5049,7 +5061,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private void validateActivityNotBeforeLastTransactionDate(final LoanEvent event, final LocalDate activityDate) {
-        if (!(this.repaymentScheduleDetail().isInterestRecalculationEnabled() || this.loanProduct().isHoldGuaranteeFundsEnabled())) {
+        if (!(this.repaymentScheduleDetail().isInterestRecalculationEnabled() || this.loanProduct().isHoldGuaranteeFunds())) {
             return;
         }
         LocalDate lastTransactionDate = getLastUserTransactionDate();
@@ -5420,7 +5432,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
-        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
         ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(
                 getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
                 getActiveCharges());
@@ -5574,7 +5586,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public ChangedTransactionDetail processTransactions() {
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
-        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
         ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(
                 getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
                 getActiveCharges());
@@ -5818,7 +5830,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void processPostDisbursementTransactions() {
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
-        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
         final List<LoanTransaction> copyTransactions = new ArrayList<>();
         if (!allNonContraTransactionsPostDisbursement.isEmpty()) {
             for (LoanTransaction loanTransaction : allNonContraTransactionsPostDisbursement) {
@@ -6428,7 +6440,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction, new TransactionCtx(getCurrency(),
                     getRepaymentScheduleInstallments(), getActiveCharges(), new MoneyHolder(getTotalOverpaidAsMoney())));
         } else {
-            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsForReprocessing();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -7265,5 +7277,4 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void updateEnableInstallmentLevelDelinquency(boolean enableInstallmentLevelDelinquency) {
         this.enableInstallmentLevelDelinquency = enableInstallmentLevelDelinquency;
     }
-
 }

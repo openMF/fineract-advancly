@@ -1223,6 +1223,8 @@ final class LoansApiResourceSwagger {
         public Integer graceOnArrearsAgeing;
         @Schema(example = "HORIZONTAL")
         public String loanScheduleProcessingType;
+        @Schema(example = "false")
+        public Boolean enableInstallmentLevelDelinquency;
     }
 
     @Schema(description = "PostLoansResponse")
@@ -1370,6 +1372,8 @@ final class LoansApiResourceSwagger {
         public List<PutLoansLoanIdDisbursementData> disbursementData;
         @Schema(example = "HORIZONTAL")
         public String loanScheduleProcessingType;
+        @Schema(example = "false")
+        public Boolean enableInstallmentLevelDelinquency;
 
         static final class PutLoansLoanIdChanges {
 

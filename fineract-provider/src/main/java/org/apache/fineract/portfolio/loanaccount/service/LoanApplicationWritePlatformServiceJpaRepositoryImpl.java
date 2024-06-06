@@ -196,6 +196,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LoanRepository loanRepository;
     private final GSIMReadPlatformService gsimReadPlatformService;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
+    private final LoanProductDataValidator loanProductDataValidator;
 
     @Transactional
     @Override
@@ -234,7 +235,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
 
-            if (loanProduct.useBorrowerCycle()) {
+            if (loanProduct.isUseBorrowerCycle()) {
                 Integer cycleNumber = 0;
                 if (clientId != null) {
                     cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, loanProduct.getId());
@@ -253,6 +254,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
+            final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(command.parsedJson());
+            loanProductDataValidator.fixedLengthValidations(newLoanApplication.getTransactionProcessingStrategyCode(), loanApplicationTerms,
+                    this.fromJsonHelper.parse(command.json()), baseDataValidator);
 
             checkForProductMixRestrictions(newLoanApplication);
 
@@ -260,7 +264,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             final LoanProductRelatedDetail productRelatedDetail = newLoanApplication.repaymentScheduleDetail();
 
-            if (loanProduct.getLoanProductConfigurableAttributes() != null) {
+            if (loanProduct.getLoanConfigurableAttributes() != null) {
                 updateProductRelatedDetails(productRelatedDetail, newLoanApplication);
             }
 
@@ -269,7 +273,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     newLoanApplication);
 
-            if (loanProduct.canUseForTopup() && clientId != null) {
+            if (loanProduct.isCanUseForTopup() && clientId != null) {
                 final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);
@@ -438,7 +442,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         CalendarEntityType.LOANS.getValue());
                 this.calendarInstanceRepository.save(calendarInstance);
             } else {
-                final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(command.parsedJson());
                 final Integer repaymentFrequencyNthDayType = command.integerValueOfParameterNamed("repaymentFrequencyNthDayType");
                 if (loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.MONTHS
                         && repaymentFrequencyNthDayType != null) {
@@ -550,7 +553,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             activeLoansLoanProductIds = this.loanRepositoryWrapper.findActiveLoansLoanProductIdsByClient(loan.getClientId(),
                     LoanStatus.ACTIVE.getValue());
         }
-        checkForProductMixRestrictions(activeLoansLoanProductIds, productId, loan.loanProduct().productName());
+        checkForProductMixRestrictions(activeLoansLoanProductIds, productId, loan.loanProduct().getName());
     }
 
     private void checkForProductMixRestrictions(final List<Long> activeLoansLoanProductIds, final Long productId,
@@ -571,15 +574,15 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     }
 
     private void updateProductRelatedDetails(LoanProductRelatedDetail productRelatedDetail, Loan loan) {
-        final Boolean amortization = loan.loanProduct().getLoanProductConfigurableAttributes().getAmortizationBoolean();
-        final Boolean arrearsTolerance = loan.loanProduct().getLoanProductConfigurableAttributes().getArrearsToleranceBoolean();
-        final Boolean graceOnArrearsAging = loan.loanProduct().getLoanProductConfigurableAttributes().getGraceOnArrearsAgingBoolean();
-        final Boolean interestCalcPeriod = loan.loanProduct().getLoanProductConfigurableAttributes().getInterestCalcPeriodBoolean();
-        final Boolean interestMethod = loan.loanProduct().getLoanProductConfigurableAttributes().getInterestMethodBoolean();
-        final Boolean graceOnPrincipalAndInterestPayment = loan.loanProduct().getLoanProductConfigurableAttributes()
+        final Boolean amortization = loan.loanProduct().getLoanConfigurableAttributes().getAmortizationBoolean();
+        final Boolean arrearsTolerance = loan.loanProduct().getLoanConfigurableAttributes().getArrearsToleranceBoolean();
+        final Boolean graceOnArrearsAging = loan.loanProduct().getLoanConfigurableAttributes().getGraceOnArrearsAgingBoolean();
+        final Boolean interestCalcPeriod = loan.loanProduct().getLoanConfigurableAttributes().getInterestCalcPeriodBoolean();
+        final Boolean interestMethod = loan.loanProduct().getLoanConfigurableAttributes().getInterestMethodBoolean();
+        final Boolean graceOnPrincipalAndInterestPayment = loan.loanProduct().getLoanConfigurableAttributes()
                 .getGraceOnPrincipalAndInterestPaymentBoolean();
-        final Boolean repaymentEvery = loan.loanProduct().getLoanProductConfigurableAttributes().getRepaymentEveryBoolean();
-        final Boolean transactionProcessingStrategy = loan.loanProduct().getLoanProductConfigurableAttributes()
+        final Boolean repaymentEvery = loan.loanProduct().getLoanConfigurableAttributes().getRepaymentEveryBoolean();
+        final Boolean transactionProcessingStrategy = loan.loanProduct().getLoanConfigurableAttributes()
                 .getTransactionProcessingStrategyBoolean();
 
         if (!amortization) {
@@ -606,9 +609,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             productRelatedDetail.setRepayEvery(loan.loanProduct().getLoanProductRelatedDetail().getRepayEvery());
         }
         if (!transactionProcessingStrategy) {
-            loan.updateTransactionProcessingStrategy(loan.loanProduct().getRepaymentStrategy(),
-                    this.loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loan.loanProduct().getRepaymentStrategy())
-                            .getName());
+            loan.updateTransactionProcessingStrategy(loan.loanProduct().getTransactionProcessingStrategyCode(),
+                    this.loanRepaymentScheduleTransactionProcessorFactory
+                            .determineProcessor(loan.loanProduct().getTransactionProcessingStrategyCode()).getName());
         }
     }
 
@@ -804,7 +807,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
                 final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
                 final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
-                if (newLoanProduct.useBorrowerCycle()) {
+                if (newLoanProduct.isUseBorrowerCycle()) {
                     final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
                     final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
                     Integer cycleNumber = 0;
@@ -835,11 +838,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             validateSubmittedOnDate(existingLoanApplication);
 
             final LoanProductRelatedDetail productRelatedDetail = existingLoanApplication.repaymentScheduleDetail();
-            if (existingLoanApplication.loanProduct().getLoanProductConfigurableAttributes() != null) {
+            if (existingLoanApplication.loanProduct().getLoanConfigurableAttributes() != null) {
                 updateProductRelatedDetails(productRelatedDetail, existingLoanApplication);
             }
 
-            if (existingLoanApplication.getLoanProduct().canUseForTopup() && existingLoanApplication.getClientId() != null) {
+            if (existingLoanApplication.getLoanProduct().isCanUseForTopup() && existingLoanApplication.getClientId() != null) {
                 final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (command.isChangeInBooleanParameterNamed(LoanApiConstants.isTopup, existingLoanApplication.isTopup())) {
                     existingLoanApplication.setIsTopup(isTopup);
@@ -965,6 +968,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final String chargesParamName = "charges";
             if (changes.containsKey(chargesParamName)) {
                 existingLoanApplication.updateLoanCharges(possiblyModifedLoanCharges);
+            }
+
+            // update installment level delinquency
+            if (command.isChangeInBooleanParameterNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY,
+                    existingLoanApplication.isEnableInstallmentLevelDelinquency())) {
+                final Boolean enableInstallmentLevelDelinquency = command
+                        .booleanObjectValueOfParameterNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY);
+                existingLoanApplication.updateEnableInstallmentLevelDelinquency(enableInstallmentLevelDelinquency);
             }
 
             if (changes.containsKey("recalculateLoanSchedule")) {

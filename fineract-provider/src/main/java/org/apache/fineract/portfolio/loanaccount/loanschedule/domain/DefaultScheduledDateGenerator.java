@@ -34,7 +34,6 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarHistory;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
-import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -46,15 +45,15 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
 
         final int numberOfRepayments = loanApplicationTerms.getNumberOfRepayments();
 
-        RepaymentStartDateType repaymentStartDateType = loanApplicationTerms.getRepaymentStartDateType();
-
-        LocalDate lastRepaymentDate = RepaymentStartDateType.DISBURSEMENT_DATE.equals(repaymentStartDateType)
-                ? loanApplicationTerms.getExpectedDisbursementDate()
-                : loanApplicationTerms.getSubmittedOnDate();
+        LocalDate lastRepaymentDate = loanApplicationTerms.getRepaymentStartDate();
         boolean isFirstRepayment = true;
         for (int repaymentPeriod = 1; repaymentPeriod <= numberOfRepayments; repaymentPeriod++) {
             lastRepaymentDate = generateNextRepaymentDate(lastRepaymentDate, loanApplicationTerms, isFirstRepayment);
             isFirstRepayment = false;
+        }
+        if (loanApplicationTerms.getFixedLength() != null
+                && loanApplicationTerms.calculateMaxDateForFixedLength().compareTo(lastRepaymentDate) != 0) {
+            lastRepaymentDate = loanApplicationTerms.calculateMaxDateForFixedLength();
         }
         lastRepaymentDate = adjustRepaymentDate(lastRepaymentDate, loanApplicationTerms, holidayDetailDTO).getChangedScheduleDate();
         return lastRepaymentDate;
@@ -101,6 +100,22 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
                         loanApplicationTerms.getRepaymentEvery(),
                         CalendarUtils.getMeetingFrequencyFromPeriodFrequencyType(loanApplicationTerms.getLoanTermPeriodFrequencyType()),
                         loanApplicationTerms.isSkipRepaymentOnFirstDayofMonth(), loanApplicationTerms.getNumberOfdays());
+            }
+        }
+
+        return dueRepaymentPeriodDate;
+    }
+
+    @Override
+    public LocalDate generateNextRepaymentDate(LocalDate lastRepaymentDate, LoanApplicationTerms loanApplicationTerms,
+            final boolean isFirstRepayment, final Integer periodNumber) {
+        LocalDate dueRepaymentPeriodDate = generateNextRepaymentDate(lastRepaymentDate, loanApplicationTerms, isFirstRepayment);
+
+        // Fixed Length validation only for Last Installment
+        if (loanApplicationTerms.isLastPeriod(periodNumber)) {
+            final LocalDate maxDateForFixedLength = loanApplicationTerms.calculateMaxDateForFixedLength();
+            if (maxDateForFixedLength != null && dueRepaymentPeriodDate.compareTo(maxDateForFixedLength) != 0) {
+                dueRepaymentPeriodDate = maxDateForFixedLength;
             }
         }
 

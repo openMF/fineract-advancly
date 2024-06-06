@@ -30,14 +30,21 @@ buildscript {
                 'fineract-core',
                 'fineract-accounting',
                 'fineract-provider',
+                'fineract-branch',
+                'fineract-document',
                 'fineract-investor',
+                'fineract-charge',
+                'fineract-rates',
                 'fineract-loan',
                 'fineract-savings',
                 'integration-tests',
                 'twofactor-tests',
                 'oauth2-tests',
                 'fineract-client',
-                'fineract-avro-schemas'
+                'fineract-avro-schemas',
+                'fineract-e2e-tests-core',
+                'fineract-e2e-tests-runner',
+                'fineract-progressive-loan'
             ].contains(it.name)
         }
         fineractPublishProjects = subprojects.findAll{
@@ -49,8 +56,13 @@ buildscript {
                 'fineract-accounting',
                 'fineract-provider',
                 'fineract-investor',
+                'fineract-charge',
+                'fineract-rates',
                 'fineract-loan',
-                'fineract-savings'
+                'fineract-savings',
+                'fineract-branch',
+                'fineract-document',
+                'fineract-progressive-loan'
             ].contains(it.name)
         }
         npmRepository = 'https://npm.pkg.github.com'
@@ -79,7 +91,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.16.1' apply false
     id 'com.github.jk1.dependency-license-report' version '2.5' apply false
     id 'org.zeroturnaround.gradle.jrebel' version '1.2.0' apply false
-    id 'org.springframework.boot' version '3.2.2' apply false
+    id 'org.springframework.boot' version '3.2.6' apply false
     id 'net.ltgt.errorprone' version '3.1.0' apply false
     id 'io.swagger.core.v3.swagger-gradle-plugin' version '2.2.19' apply false
     id 'com.gorylenko.gradle-git-properties' version '2.4.1' apply false
@@ -89,7 +101,7 @@ plugins {
     id 'org.asciidoctor.jvm.revealjs' version '3.3.2' apply false
     id 'org.asciidoctor.jvm.gems' version '3.3.2' apply false
     id 'org.asciidoctor.kindlegen.base' version '3.2.0' apply false
-    id 'com.google.cloud.tools.jib' version '3.4.0' apply false
+    id 'com.google.cloud.tools.jib' version '3.4.2' apply false
     id 'org.sonarqube' version '4.4.1.3373'
     id 'com.github.andygoossens.modernizer' version '1.9.0' apply false
     // TODO: upgrade to 6.0.4
@@ -282,7 +294,8 @@ allprojects  {
             ".mailmap",
             '**/images/diag-*.svg',
             '**/*.avsc',
-            "**/generated/**/*MapperImpl.java"
+            "**/generated/**/*MapperImpl.java",
+            '**/META-INF/fineract-test.config'
         ]
     }
 }
@@ -438,7 +451,7 @@ configure(project.fineractJavaProjects) {
     // Configuration for the Checkstyle plugin
     // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
     dependencies {
-        checkstyle 'com.puppycrawl.tools:checkstyle:10.13.0'
+        checkstyle 'com.puppycrawl.tools:checkstyle:10.14.2'
         checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
     }
 
@@ -460,7 +473,7 @@ configure(project.fineractJavaProjects) {
     // Configuration for the errorprone plugin
     // https://github.com/tbroyer/gradle-errorprone-plugin
     dependencies {
-        errorprone "com.google.errorprone:error_prone_core:2.25.0"
+        errorprone "com.google.errorprone:error_prone_core:2.26.1"
     }
 
     tasks.withType(JavaCompile) {

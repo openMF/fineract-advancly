@@ -164,7 +164,7 @@ public class LoanAssembler {
         }
         List<LoanDisbursementDetails> disbursementDetails = new ArrayList<>();
         BigDecimal fixedEmiAmount = null;
-        if (loanProduct.isMultiDisburseLoan() || loanProduct.canDefineInstallmentAmount()) {
+        if (loanProduct.isMultiDisburseLoan() || loanProduct.isCanDefineInstallmentAmount()) {
             fixedEmiAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.emiAmountParameterName, element);
         }
         BigDecimal maxOutstandingLoanBalance = null;
@@ -327,7 +327,13 @@ public class LoanAssembler {
             }
         }
 
-        loanApplication.updateEnableInstallmentLevelDelinquency(loanProduct.isEnableInstallmentLevelDelinquency());
+        final Boolean isEnableInstallmentLevelDelinquency = this.fromApiJsonHelper
+                .extractBooleanNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, element);
+        if (isEnableInstallmentLevelDelinquency != null) {
+            loanApplication.updateEnableInstallmentLevelDelinquency(isEnableInstallmentLevelDelinquency);
+        } else {
+            loanApplication.updateEnableInstallmentLevelDelinquency(loanProduct.isEnableInstallmentLevelDelinquency());
+        }
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();

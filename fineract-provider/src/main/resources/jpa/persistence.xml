@@ -48,11 +48,11 @@
         <class>org.apache.fineract.portfolio.group.domain.StaffAssignmentHistory</class>
         <class>org.apache.fineract.portfolio.group.domain.GroupRole</class>
         <class>org.apache.fineract.portfolio.client.domain.Client</class>
+        <class>org.apache.fineract.portfolio.client.domain.ClientIdentifier</class>
         <class>org.apache.fineract.portfolio.rate.domain.Rate</class>
         <class>org.apache.fineract.portfolio.fund.domain.Fund</class>
         <class>org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket</class>
         <class>org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange</class>
-        <class>org.apache.fineract.portfolio.charge.domain.Charge</class>
         <class>org.apache.fineract.portfolio.paymenttype.domain.PaymentType</class>
         <class>org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail</class>
         <class>org.apache.fineract.portfolio.tax.domain.TaxGroup</class>
@@ -118,6 +118,7 @@
         <class>org.apache.fineract.portfolio.loanaccount.domain.LoanCreditAllocationRule</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.PaymentAllocationTypeListConverter</class>
+        <class>org.apache.fineract.portfolio.loanaccount.domain.reaging.LoanReAgeParameter</class>
         <!-- Fineract Savings module -->
         <class>org.apache.fineract.interoperation.domain.InteropIdentifier</class>
         <class>org.apache.fineract.portfolio.interestratechart.domain.InterestIncentives</class>
@@ -139,6 +140,10 @@
         <!-- Fineract Accounting module -->
         <class>org.apache.fineract.accounting.rule.domain.AccountingRule</class>
         <class>org.apache.fineract.accounting.rule.domain.AccountingTagRule</class>
+        <!-- Fineract Document module -->
+        <class>org.apache.fineract.infrastructure.documentmanagement.domain.Document</class>
+        <!-- Fineract Charge module -->
+        <class>org.apache.fineract.portfolio.charge.domain.Charge</class>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.weaving" value="static" />

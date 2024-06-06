@@ -104,7 +104,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.DISALLOW_EXPECTED_DISBURSEMENTS, LoanApiConstants.FRAUD_ATTRIBUTE_NAME,
-            LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.FIXED_LENGTH));
+            LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.FIXED_LENGTH,
+            LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;
@@ -516,7 +517,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         }
 
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.emiAmountParameterName, element)) {
-            if (!(loanProduct.canDefineInstallmentAmount() || loanProduct.isMultiDisburseLoan())) {
+            if (!(loanProduct.isCanDefineInstallmentAmount() || loanProduct.isMultiDisburseLoan())) {
                 List<String> unsupportedParameterList = new ArrayList<>();
                 unsupportedParameterList.add(LoanApiConstants.emiAmountParameterName);
                 throw new UnsupportedParameterException(unsupportedParameterList);
@@ -535,7 +536,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                     .ignoreIfNull().positiveAmount();
         }
 
-        if (loanProduct.canUseForTopup() && this.fromApiJsonHelper.parameterExists(LoanApiConstants.isTopup, element)) {
+        if (loanProduct.isCanUseForTopup() && this.fromApiJsonHelper.parameterExists(LoanApiConstants.isTopup, element)) {
             final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
             baseDataValidator.reset().parameter(LoanApiConstants.isTopup).value(isTopup).validateForBooleanValue();
 
@@ -581,6 +582,22 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         }
 
         validatePartialPeriodSupport(interestCalculationPeriodType, baseDataValidator, element, loanProduct);
+
+        // validate enable installment level delinquency
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, element)) {
+            final Boolean isEnableInstallmentLevelDelinquency = this.fromApiJsonHelper
+                    .extractBooleanNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY)
+                    .value(isEnableInstallmentLevelDelinquency).validateForBooleanValue();
+            if (loanProduct.getDelinquencyBucket() == null) {
+                if (isEnableInstallmentLevelDelinquency) {
+                    baseDataValidator.reset().parameter(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY).failWithCode(
+                            "can.be.enabled.for.loan.with.loan.product.having.valid.delinquency.bucket",
+                            "Installment level delinquency cannot be enabled for a loan if Delinquency bucket is not configured for loan product");
+                }
+            }
+        }
+
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
@@ -1062,7 +1079,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         }
 
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.emiAmountParameterName, element)) {
-            if (!(loanProduct.canDefineInstallmentAmount() || loanProduct.isMultiDisburseLoan())) {
+            if (!(loanProduct.isCanDefineInstallmentAmount() || loanProduct.isMultiDisburseLoan())) {
                 List<String> unsupportedParameterList = new ArrayList<>();
                 unsupportedParameterList.add(LoanApiConstants.emiAmountParameterName);
                 throw new UnsupportedParameterException(unsupportedParameterList);
@@ -1082,7 +1099,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                     .ignoreIfNull().positiveAmount();
         }
 
-        if (loanProduct.canUseForTopup() && this.fromApiJsonHelper.parameterExists(LoanApiConstants.isTopup, element)) {
+        if (loanProduct.isCanUseForTopup() && this.fromApiJsonHelper.parameterExists(LoanApiConstants.isTopup, element)) {
             final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
             baseDataValidator.reset().parameter(LoanApiConstants.isTopup).value(isTopup).ignoreIfNull().validateForBooleanValue();
 
@@ -1115,6 +1132,20 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
                 && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY.equals(transactionProcessingStrategy)) {
             advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(allocationRules);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, element)) {
+            final Boolean isEnableInstallmentLevelDelinquency = this.fromApiJsonHelper
+                    .extractBooleanNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY)
+                    .value(isEnableInstallmentLevelDelinquency).validateForBooleanValue();
+            if (loanProduct.getDelinquencyBucket() == null) {
+                if (isEnableInstallmentLevelDelinquency) {
+                    baseDataValidator.reset().parameter(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY).failWithCode(
+                            "can.be.enabled.for.loan.with.loan.product.having.valid.delinquency.bucket",
+                            "Installment level delinquency cannot be enabled for a loan if Delinquency bucket is not configured for loan product");
+                }
+            }
         }
 
         if (!dataValidationErrors.isEmpty()) {
@@ -1391,7 +1422,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                             .failWithCode("not.supported.for.selected.interest.calcualtion.type");
                 }
 
-                if (loanProduct.allowVariabeInstallments()) {
+                if (loanProduct.isAllowVariabeInstallments()) {
                     baseDataValidator.reset().parameter(LoanProductConstants.allowVariableInstallmentsParamName)
                             .failWithCode("not.supported.for.selected.interest.calcualtion.type");
                 }

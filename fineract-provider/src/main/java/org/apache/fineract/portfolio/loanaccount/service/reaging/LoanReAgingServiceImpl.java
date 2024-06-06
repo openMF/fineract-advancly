@@ -44,13 +44,13 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanReAgingApiConstants;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionComparator;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.reaging.LoanReAgeParameter;
 import org.apache.fineract.portfolio.loanaccount.domain.reaging.LoanReAgingParameterRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
@@ -80,11 +80,10 @@ public class LoanReAgingServiceImpl {
         changes.put(LoanReAgingApiConstants.dateFormatParameterName, command.dateFormat());
 
         LoanTransaction reAgeTransaction = createReAgeTransaction(loan, command);
-        // important to do a flush before creating the reage parameter since it needs the ID
-        loanTransactionRepository.saveAndFlush(reAgeTransaction);
-
         LoanReAgeParameter reAgeParameter = createReAgeParameter(reAgeTransaction, command);
-        reAgingParameterRepository.saveAndFlush(reAgeParameter);
+        reAgeTransaction.setLoanReAgeParameter(reAgeParameter);
+
+        loanTransactionRepository.saveAndFlush(reAgeTransaction);
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = loanRepaymentScheduleTransactionProcessorFactory
                 .determineProcessor(loan.transactionProcessingStrategy());
@@ -119,7 +118,7 @@ public class LoanReAgingServiceImpl {
 
         LoanTransaction reAgeTransaction = findLatestNonReversedReAgeTransaction(loan);
         if (reAgeTransaction == null) {
-            // TODO: when validations implemented; throw exception if there isn't a reage transaction available
+            throw new LoanTransactionNotFoundException("Re-Age transaction for loan was not found");
         }
         reverseReAgeTransaction(reAgeTransaction, command);
         loanTransactionRepository.saveAndFlush(reAgeTransaction);
@@ -177,13 +176,11 @@ public class LoanReAgingServiceImpl {
         LocalDate startDate = command.dateValueOfParameterNamed(LoanReAgingApiConstants.startDate);
         Integer numberOfInstallments = command.integerValueOfParameterNamed(LoanReAgingApiConstants.numberOfInstallments);
         Integer periodFrequencyNumber = command.integerValueOfParameterNamed(LoanReAgingApiConstants.frequencyNumber);
-        return new LoanReAgeParameter(reAgeTransaction.getId(), periodFrequencyType, periodFrequencyNumber, startDate,
-                numberOfInstallments);
+        return new LoanReAgeParameter(reAgeTransaction, periodFrequencyType, periodFrequencyNumber, startDate, numberOfInstallments);
     }
 
     private void reProcessLoanTransactions(Loan loan) {
-        final List<LoanTransaction> filteredTransactions = loan.getLoanTransactions().stream().filter(LoanTransaction::isNotReversed)
-                .filter(t -> t.isChargeOff() || !t.isNonMonetaryTransaction()).sorted(LoanTransactionComparator.INSTANCE).toList();
+        final List<LoanTransaction> filteredTransactions = loan.retrieveListOfTransactionsForReprocessing();
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = loanRepaymentScheduleTransactionProcessorFactory
                 .determineProcessor(loan.transactionProcessingStrategy());
