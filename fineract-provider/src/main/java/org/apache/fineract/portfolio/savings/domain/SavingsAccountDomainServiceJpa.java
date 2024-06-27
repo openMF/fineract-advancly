@@ -456,7 +456,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                                 account.addTransaction(reversal);
                             }
                         }
-                        if (account.savingsProduct().isAccrualBasedAccountingEnabled() && MathUtil.isGreaterThanZero(interestEarnedToBePostedForPeriod)) {
+                        if (account.savingsProduct().isAccrualBasedAccountingEnabled()
+                                && MathUtil.isGreaterThanZero(interestEarnedToBePostedForPeriod)) {
                             log.info("TX2: {}", interestEarnedToBePostedForPeriod.getAmount());
                             SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
                                     interestPostingTransactionDate, interestEarnedToBePostedForPeriod,

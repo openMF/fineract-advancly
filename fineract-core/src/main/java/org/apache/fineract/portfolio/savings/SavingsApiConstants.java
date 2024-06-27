@@ -66,6 +66,7 @@ public class SavingsApiConstants {
     public static final String COMMAND_BLOCK_DEBIT = "blockDebit";
     public static final String COMMAND_UNBLOCK_DEBIT = "unblockDebit";
     public static final String COMMAND_UNBLOCK_CREDIT = "unblockCredit";
+    public static final String COMMAND_ADD_ACCRUAL_TRANSACTION = "addAccrualTransactions";
 
     // general
     public static final String localeParamName = "locale";
