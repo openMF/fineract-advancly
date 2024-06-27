@@ -60,7 +60,7 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
  */
 @Entity
 @Table(name = "m_loan_transaction", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id_UNIQUE") })
-public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
+public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom<Long> {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", nullable = false)
@@ -580,11 +580,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isRepaymentLikeType() {
         return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isChargeRefund()
-                || isChargeAdjustment() || isDownPayment();
+                || isChargeAdjustment() || isDownPayment() || isInterestPaymentWaiver();
     }
 
     public boolean isTypeAllowedForChargeback() {
-        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isDownPayment();
+        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isDownPayment()
+                || isInterestPaymentWaiver();
     }
 
     public boolean isRepayment() {
@@ -605,6 +606,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isGoodwillCredit() {
         return LoanTransactionType.GOODWILL_CREDIT.equals(getTypeOf()) && isNotReversed();
+    }
+
+    public boolean isInterestPaymentWaiver() {
+        return LoanTransactionType.INTEREST_PAYMENT_WAIVER.equals(getTypeOf()) && isNotReversed();
     }
 
     public boolean isChargeRefund() {
@@ -1014,6 +1019,29 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setLoanReAgeParameter(LoanReAgeParameter loanReAgeParameter) {
         this.loanReAgeParameter = loanReAgeParameter;
+    }
+
+    public boolean happenedBefore(LoanTransaction loanTransaction) {
+        // compare transaction date, creation date and then transaction id
+        if (DateUtils.isBefore(getTransactionDate(), loanTransaction.getTransactionDate())) {
+            return true;
+        }
+        if (DateUtils.isEqual(getTransactionDate(), loanTransaction.getTransactionDate())) {
+            if (DateUtils.isBefore(getCreatedDateTime(), loanTransaction.getCreatedDateTime())) {
+                return true;
+            }
+            if (DateUtils.isEqual(getCreatedDateTime(), loanTransaction.getCreatedDateTime())) {
+                if (getId().compareTo(loanTransaction.getId()) < 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public String getChargeRefundChargeType() {
+        return chargeRefundChargeType;
     }
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as

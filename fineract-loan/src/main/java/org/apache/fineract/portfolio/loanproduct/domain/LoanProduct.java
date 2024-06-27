@@ -84,7 +84,7 @@ import org.apache.fineract.portfolio.rate.domain.Rate;
 @Table(name = "m_product_loan", uniqueConstraints = { @UniqueConstraint(columnNames = { "name" }, name = "unq_name"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "external_id_UNIQUE"),
         @UniqueConstraint(columnNames = { "short_name" }, name = "unq_short_name") })
-public class LoanProduct extends AbstractPersistableCustom {
+public class LoanProduct extends AbstractPersistableCustom<Long> {
 
     @ManyToOne
     @JoinColumn(name = "fund_id")
@@ -731,8 +731,6 @@ public class LoanProduct extends AbstractPersistableCustom {
                 isInterestRecalculationEnabled, isEqualAmortization, enableDownPayment, disbursedAmountPercentageForDownPayment,
                 enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType, fixedLength);
 
-        this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
-
         this.loanProductMinMaxConstraints = new LoanProductMinMaxConstraints(defaultMinPrincipal, defaultMaxPrincipal,
                 defaultMinNominalInterestRatePerPeriod, defaultMaxNominalInterestRatePerPeriod, defaultMinNumberOfInstallments,
                 defaultMaxNumberOfInstallments);
@@ -1312,21 +1310,21 @@ public class LoanProduct extends AbstractPersistableCustom {
                 this.loanProductRelatedDetail.isEnableDownPayment())) {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ENABLE_DOWN_PAYMENT);
             actualChanges.put(LoanProductConstants.ENABLE_DOWN_PAYMENT, newValue);
-            this.loanProductRelatedDetail.updateEnableDownPayment(newValue);
+            this.loanProductRelatedDetail.setEnableDownPayment(newValue);
         }
 
         if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT,
                 this.loanProductRelatedDetail.getDisbursedAmountPercentageForDownPayment())) {
             BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT);
             actualChanges.put(LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT, newValue);
-            this.loanProductRelatedDetail.updateDisbursedAmountPercentageForDownPayment(newValue);
+            this.loanProductRelatedDetail.setDisbursedAmountPercentageForDownPayment(newValue);
         }
 
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT,
                 this.loanProductRelatedDetail.isEnableAutoRepaymentForDownPayment())) {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT);
             actualChanges.put(LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT, newValue);
-            this.loanProductRelatedDetail.updateEnableAutoRepaymentForDownPayment(newValue);
+            this.loanProductRelatedDetail.setEnableAutoRepaymentForDownPayment(newValue);
         }
 
         if (command.isChangeInIntegerParameterNamed(LoanProductConstants.REPAYMENT_START_DATE_TYPE,

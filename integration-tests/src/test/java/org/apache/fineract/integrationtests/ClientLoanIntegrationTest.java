@@ -445,7 +445,7 @@ public class ClientLoanIntegrationTest {
 
         DateFormat dateFormat = new SimpleDateFormat(DATETIME_PATTERN, Locale.US);
         Calendar todaysDate = Calendar.getInstance(Utils.getTimeZoneOfTenant());
-        final String LOAN_DISBURSEMENT_DATE = dateFormat.format(todaysDate.getTime());
+        final String LOAN_DISBURSEMENT_DATE = "2 June 2014";
 
         LOG.info("-----------------------------------APPROVE LOAN-----------------------------------------");
         loanStatusHashMap = LOAN_TRANSACTION_HELPER.approveLoan(LOAN_DISBURSEMENT_DATE, loanID);
@@ -1545,7 +1545,7 @@ public class ClientLoanIntegrationTest {
      * amount plus interest
      */
     @Test
-    public void loanWithCahargesOfTypeAmountPlusInterestPercentageAndCashBasedAccountingEnabled() {
+    public void loanWithChargesOfTypeAmountPlusInterestPercentageAndCashBasedAccountingEnabled() {
 
         final Integer clientID = ClientHelper.createClient(REQUEST_SPEC, RESPONSE_SPEC);
         ClientHelper.verifyClientCreatedOnServer(REQUEST_SPEC, RESPONSE_SPEC, clientID);
@@ -7479,10 +7479,14 @@ public class ClientLoanIntegrationTest {
             map.put("amount", amount);
         }
         if (charge.get("dueDate") != null) {
-            map.put("dueDate", charge.get("dueDate"));
+            map.put("dueDate", DATE_TIME_FORMATTER.format(fromArrayToLocalDate((List) charge.get("dueDate"))));
         }
         map.put("chargeId", charge.get("chargeId"));
         return map;
+    }
+
+    private LocalDate fromArrayToLocalDate(List<Integer> dueDate) {
+        return LocalDate.of(dueDate.get(0), dueDate.get(1), dueDate.get(2));
     }
 
     private HashMap createTrancheDetail(final String date, final String amount) {

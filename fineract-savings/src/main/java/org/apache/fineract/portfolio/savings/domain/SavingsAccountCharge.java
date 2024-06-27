@@ -60,7 +60,7 @@ import org.apache.fineract.portfolio.charge.exception.SavingsAccountChargeWithou
 @Slf4j
 @Entity
 @Table(name = "m_savings_account_charge")
-public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom {
+public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom<Long> {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "savings_account_id", referencedColumnName = "id", nullable = false)
