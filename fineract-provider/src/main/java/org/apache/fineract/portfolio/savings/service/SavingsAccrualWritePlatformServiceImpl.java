@@ -27,7 +27,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -90,6 +93,37 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
         if (!errors.isEmpty()) {
             throw new JobExecutionException(errors);
         }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult addAccrualEntries(Long savingsAccountId) {
+        SavingsAccount savingsAccount = savingsAccountAssembler.assembleFrom(savingsAccountId, false);
+        final LocalDate tillDate = DateUtils.getBusinessLocalDate();
+        final Collection<SavingsAccrualData> savingsAccrualData = savingsAccountReadPlatformService.retrievePeriodicAccrualData(tillDate,
+                savingsAccount);
+        final Integer financialYearBeginningMonth = configurationDomainService.retrieveFinancialYearBeginningMonth();
+        final boolean isSavingsInterestPostingAtCurrentPeriodEnd = this.configurationDomainService
+                .isSavingsInterestPostingAtCurrentPeriodEnd();
+        final MathContext mc = MoneyHelper.getMathContext();
+
+        List<Throwable> errors = new ArrayList<>();
+        for (SavingsAccrualData savingsAccrual : savingsAccrualData) {
+            try {
+                LocalDate fromDate = savingsAccrual.getAccruedTill();
+                if (fromDate == null) {
+                    fromDate = savingsAccount.getActivationDate();
+                }
+                log.debug("Processing savings account {} from date {} till date {}", savingsAccrual.getAccountNo(), fromDate, tillDate);
+                addAccrualTransactions(savingsAccount, fromDate, tillDate, financialYearBeginningMonth,
+                        isSavingsInterestPostingAtCurrentPeriodEnd, mc);
+            } catch (Exception e) {
+                log.error("Failed to add accrual transaction for savings {} : {}", savingsAccrual.getAccountNo(), e.getMessage());
+                errors.add(e.getCause());
+            }
+        }
+
+        return CommandProcessingResult.empty();
     }
 
     @Override
@@ -165,13 +199,15 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
 
         LocalDate accruedTillDate = fromDate;
         for (PostingPeriod period : allPostingPeriods) {
-            period.calculateInterest(compoundInterestValues);
-            log.debug("  period {} {} : {} {}", period.getPeriodInterval().startDate(), period.getPeriodInterval().endDate(),
-                    period.getInterestEarned());
-            if (!accrualTransactionDates.contains(period.getPeriodInterval().endDate())) {
-                SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount,
-                        savingsAccount.office(), period.getPeriodInterval().endDate(), period.getInterestEarned(), false);
-                savingsAccount.addTransaction(savingsAccountTransaction);
+            if (MathUtil.isGreaterThanZero(period.closingBalance())) {
+                period.calculateInterest(compoundInterestValues);
+                log.debug("  period {} {} : {}", period.getPeriodInterval().startDate(), period.getPeriodInterval().endDate(),
+                        period.getInterestEarned());
+                if (!accrualTransactionDates.contains(period.getPeriodInterval().endDate())) {
+                    SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount,
+                            savingsAccount.office(), period.getPeriodInterval().endDate(), period.getInterestEarned(), false);
+                    savingsAccount.addTransaction(savingsAccountTransaction);
+                }
             }
         }
 

@@ -128,7 +128,6 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
             result = commandSourceService.processCommand(findCommandHandler(wrapper), command, commandSource, user, isApprovedByChecker,
                     isMakerChecker);
         } catch (Throwable t) { // NOSONAR
-            t.printStackTrace();
             RuntimeException mappable = ErrorHandler.getMappable(t);
             ErrorInfo errorInfo = commandSourceService.generateErrorInfo(mappable);
             Integer statusCode = errorInfo.getStatusCode();

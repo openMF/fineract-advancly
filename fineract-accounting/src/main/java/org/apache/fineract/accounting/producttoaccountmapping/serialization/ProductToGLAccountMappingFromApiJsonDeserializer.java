@@ -169,7 +169,6 @@ public final class ProductToGLAccountMappingFromApiJsonDeserializer {
                 Locale.getDefault());
         baseDataValidator.reset().parameter(accountingRuleParamName).value(accountingRuleType).notNull().inMinMaxRange(1, 3);
 
-
         if (AccountingValidations.isCashBasedAccounting(accountingRuleType)
                 || AccountingValidations.isAccrualBasedAccounting(accountingRuleType)) {
 

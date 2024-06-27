@@ -294,7 +294,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                 new Object[] { maxSavingsId, status, pageSize, yesterday });
         for (SavingsAccountData savingsAccountData : savingsAccountDataList) {
             this.savingAccountAssembler.assembleSavings(savingsAccountData);
-            log.info("  to process {} as {}", savingsAccountData.getAccountNo(), savingsAccountData.getDepositType().getValue());
+            log.debug("  to process {} as {}", savingsAccountData.getAccountNo(), savingsAccountData.getDepositType().getValue());
         }
         return savingsAccountDataList;
     }
