@@ -683,7 +683,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom<Long>
             boolean isInterestTransfer, final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final Integer financialYearBeginningMonth,
             final LocalDate postInterestOnDate, final boolean backdatedTxnsAllowedTill, final boolean postReversals) {
 
-        log.info("  calculateInterestUsing: {} {} {}", upToInterestCalculationDate, isInterestTransfer, postInterestOnDate);
+        log.debug("  calculateInterestUsing: {} {} {}", upToInterestCalculationDate, isInterestTransfer, postInterestOnDate);
         // no openingBalance concept supported yet but probably will to allow for migrations.
         // Check global configurations and 'pivot' date is null
         Money openingAccountBalance = backdatedTxnsAllowedTill ? Money.of(this.currency, this.summary.getRunningBalanceOnPivotDate())
@@ -715,14 +715,14 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom<Long>
             if (postInterestOnDate != null) {
                 postedAsOnDates.add(postInterestOnDate);
             }
-            log.info("  postedAsOnDates: {}", postedAsOnDates.size());
+            log.debug("  postedAsOnDates: {}", postedAsOnDates.size());
             final List<LocalDateInterval> postingPeriodIntervals = this.savingsHelper.determineInterestPostingPeriods(
                     getStartInterestCalculationDate(), upToInterestCalculationDate, postingPeriodType, financialYearBeginningMonth,
                     postedAsOnDates);
-            log.info("  postingPeriodIntervals: {}", postingPeriodIntervals.size());
+            log.debug("  postingPeriodIntervals: {}", postingPeriodIntervals.size());
 
             Money periodStartingBalance;
-            log.info("  startInterestCalculationDate: {}", this.startInterestCalculationDate);
+            log.debug("  startInterestCalculationDate: {}", this.startInterestCalculationDate);
             if (this.startInterestCalculationDate != null && !this.getStartInterestCalculationDate().equals(this.getActivationDate())) {
                 LocalDate startInterestCalculationDate = this.startInterestCalculationDate;
                 SavingsAccountTransaction transaction = null;
@@ -740,7 +740,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom<Long>
             } else {
                 periodStartingBalance = Money.zero(this.currency);
             }
-            log.info("  periodStartingBalance: {}", periodStartingBalance);
+            log.debug("  periodStartingBalance: {}", periodStartingBalance);
 
             final SavingsInterestCalculationType interestCalculationType = SavingsInterestCalculationType
                     .fromInt(this.interestCalculationType);
@@ -751,7 +751,7 @@ public class SavingsAccount extends AbstractAuditableWithUTCDateTimeCustom<Long>
             final Money minOverdraftForInterestCalculation = Money.of(getCurrency(), this.minOverdraftForInterestCalculation);
 
             for (final LocalDateInterval periodInterval : postingPeriodIntervals) {
-                log.info("  periodInterval: {} {}", periodInterval.startDate(), periodInterval.endDate());
+                log.debug("  periodInterval: {} {}", periodInterval.startDate(), periodInterval.endDate());
 
                 boolean isUserPosting = false;
                 if (postedAsOnDates.contains(periodInterval.endDate().plusDays(1))) {

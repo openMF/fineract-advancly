@@ -164,14 +164,18 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
                 .map(transaction -> transaction.getTransactionDate()).toList();
 
         LocalDate accruedTillDate = fromDate;
+        final boolean accountInOverdraft = (savingsAccount.getSummary().getAccountBalance().compareTo(BigDecimal.ZERO) < 0);
+        log.info("ACT {} : {} {}", savingsAccount.getAccountNumber(), savingsAccount.getSummary().getAccountBalance(), accountInOverdraft);
         for (PostingPeriod period : allPostingPeriods) {
-            period.calculateInterest(compoundInterestValues);
-            log.debug("  period {} {} : {} {}", period.getPeriodInterval().startDate(), period.getPeriodInterval().endDate(),
-                    period.getInterestEarned());
-            if (!accrualTransactionDates.contains(period.getPeriodInterval().endDate())) {
-                SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount,
-                        savingsAccount.office(), period.getPeriodInterval().endDate(), period.getInterestEarned(), false);
-                savingsAccount.addTransaction(savingsAccountTransaction);
+            if (!accountInOverdraft) {
+                period.calculateInterest(compoundInterestValues);
+                log.info("  period {} {} : {}", period.getPeriodInterval().startDate(), period.getPeriodInterval().endDate(),
+                        period.getInterestEarned());
+                if (!accrualTransactionDates.contains(period.getPeriodInterval().endDate())) {
+                    SavingsAccountTransaction savingsAccountTransaction = SavingsAccountTransaction.accrual(savingsAccount,
+                            savingsAccount.office(), period.getPeriodInterval().endDate(), period.getInterestEarned(), false);
+                    savingsAccount.addTransaction(savingsAccountTransaction);
+                }
             }
         }
 

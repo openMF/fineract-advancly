@@ -39,6 +39,7 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.infrastructure.event.business.domain.savings.transaction.SavingsDepositBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.savings.transaction.SavingsWithdrawalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
@@ -339,7 +340,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final List<PostingPeriod> postingPeriods = account.calculateInterestUsing(mc, interestPostingUpToDate, isInterestTransfer,
                 isSavingsInterestPostingAtCurrentPeriodEnd, financialYearBeginningMonth, postInterestOnDate, backdatedTxnsAllowedTill,
                 postReversals);
-        log.info("postInterest {}", postingPeriods.size());
+        log.debug("postInterest {}", postingPeriods.size());
 
         MonetaryCurrency currency = account.getCurrency();
         Money interestPostedToDate = Money.zero(currency);
@@ -359,11 +360,11 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         }
 
         for (final PostingPeriod interestPostingPeriod : postingPeriods) {
-            log.info("  period: {}", interestPostingPeriod.dateOfPostingTransaction());
+            log.debug("  period: {}", interestPostingPeriod.dateOfPostingTransaction());
 
             final LocalDate interestPostingTransactionDate = interestPostingPeriod.dateOfPostingTransaction();
             final Money interestEarnedToBePostedForPeriod = interestPostingPeriod.getInterestEarned();
-            log.info("  interestEarnedToBePostedForPeriod: {}", interestEarnedToBePostedForPeriod.toString());
+            log.debug("  interestEarnedToBePostedForPeriod: {}", interestEarnedToBePostedForPeriod.toString());
 
             if (!interestPostingTransactionDate.isAfter(interestPostingUpToDate)) {
                 interestPostedToDate = interestPostedToDate.plus(interestEarnedToBePostedForPeriod);
@@ -394,13 +395,17 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                             account.addTransaction(newPostingTransaction);
                         }
                         if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
-                            SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
-                                    interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
-                                    interestPostingPeriod.isUserPosting());
-                            if (backdatedTxnsAllowedTill) {
-                                account.addTransactionToExisting(accrualTransaction);
+                            if (MathUtil.isGreaterThanZero(interestEarnedToBePostedForPeriod)) {
+                                SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
+                                        interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
+                                        interestPostingPeriod.isUserPosting());
+                                if (backdatedTxnsAllowedTill) {
+                                    account.addTransactionToExisting(accrualTransaction);
+                                } else {
+                                    account.addTransaction(accrualTransaction);
+                                }
                             } else {
-                                account.addTransaction(accrualTransaction);
+                                log.info("Accrual for Overdraft interest");
                             }
                         }
                         if (applyWithHoldTax) {
@@ -416,7 +421,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                     } else {
                         correctionRequired = postingTransaction.hasNotAmount(interestEarnedToBePostedForPeriod.negated());
                     }
-                    log.info("  correctionRequired {}", correctionRequired);
+                    log.debug("  correctionRequired {}", correctionRequired);
                     if (correctionRequired) {
                         boolean applyWithHoldTaxForOldTransaction = false;
                         postingTransaction.reverse();
@@ -451,7 +456,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                                 account.addTransaction(reversal);
                             }
                         }
-                        if (account.savingsProduct().isAccrualBasedAccountingEnabled()) {
+                        if (account.savingsProduct().isAccrualBasedAccountingEnabled() && MathUtil.isGreaterThanZero(interestEarnedToBePostedForPeriod)) {
+                            log.info("TX2: {}", interestEarnedToBePostedForPeriod.getAmount());
                             SavingsAccountTransaction accrualTransaction = SavingsAccountTransaction.accrual(account, account.office(),
                                     interestPostingTransactionDate, interestEarnedToBePostedForPeriod,
                                     interestPostingPeriod.isUserPosting());
@@ -460,6 +466,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                             } else {
                                 account.addTransaction(accrualTransaction);
                             }
+                        } else {
+                            log.info("Accrual for Overdraft2 interest");
                         }
                         if (applyWithHoldTaxForOldTransaction) {
                             account.createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate,

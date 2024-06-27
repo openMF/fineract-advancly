@@ -30,11 +30,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryType;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -70,8 +70,6 @@ public class SavingsSchedularInterestPoster {
                 boolean postInterestAsOn = false;
                 LocalDate transactionDate = null;
                 try {
-                    log.info("  account: {} {} {} {}", savingsAccountData.getAccountNo(), postInterestAsOn, transactionDate,
-                            backdatedTxnsAllowedTill);
                     SavingsAccountData savingsAccountDataRet = savingsAccountWritePlatformService.postInterest(savingsAccountData,
                             postInterestAsOn, transactionDate, backdatedTxnsAllowedTill);
                     savingsAccountDataList.add(savingsAccountDataRet);
@@ -186,9 +184,9 @@ public class SavingsSchedularInterestPoster {
             List<SavingsAccountTransactionData> savingsAccountTransactionDataList = savingsAccountData.getSavingsAccountTransactionData();
             for (SavingsAccountTransactionData savingsAccountTransactionData : savingsAccountTransactionDataList) {
                 if (savingsAccountTransactionData.getId() == null) {
-                    UUID uuid = UUID.randomUUID();
-                    savingsAccountTransactionData.setRefNo(uuid.toString());
-                    transRefNo.add(uuid.toString());
+                    final ExternalId externalId = ExternalId.generate();
+                    savingsAccountTransactionData.setRefNo(externalId.toString());
+                    transRefNo.add(externalId.toString());
                     paramsForTransactionInsertion.add(new Object[] { savingsAccountData.getId(), savingsAccountData.getOfficeId(),
                             savingsAccountTransactionData.isReversed(), savingsAccountTransactionData.getTransactionType().getId(),
                             savingsAccountTransactionData.getTransactionDate(), savingsAccountTransactionData.getAmount(),
