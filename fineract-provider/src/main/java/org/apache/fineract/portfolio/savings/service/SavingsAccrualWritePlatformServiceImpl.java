@@ -23,7 +23,9 @@ import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -63,6 +65,7 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
     private final SavingsAccountRepositoryWrapper savingsAccountRepository;
     private final SavingsHelper savingsHelper;
     private final ConfigurationDomainService configurationDomainService;
+    private final SavingsAccountDomainService savingsAccountDomainService;
 
     @Transactional
     @Override
@@ -152,6 +155,11 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
 
     private void addAccrualTransactions(SavingsAccount savingsAccount, final LocalDate fromDate, final LocalDate tillDate,
             final Integer financialYearBeginningMonth, final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final MathContext mc) {
+        final Set<Long> existingTransactionIds = new HashSet<>();
+        final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        existingTransactionIds.addAll(savingsAccount.findExistingTransactionIds());
+        existingReversedTransactionIds.addAll(savingsAccount.findExistingReversedTransactionIds());
+
         List<LocalDate> postedAsOnTransactionDates = savingsAccount.getManualPostingDates();
         final SavingsPostingInterestPeriodType postingPeriodType = SavingsPostingInterestPeriodType
                 .fromInt(savingsAccount.getInterestCompoundingPeriodType());
@@ -213,6 +221,8 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
 
         savingsAccount.setAccruedTillDate(accruedTillDate);
         savingsAccountRepository.saveAndFlush(savingsAccount);
+
+        savingsAccountDomainService.postJournalEntries(savingsAccount, existingTransactionIds, existingReversedTransactionIds, false);
     }
 
 }
