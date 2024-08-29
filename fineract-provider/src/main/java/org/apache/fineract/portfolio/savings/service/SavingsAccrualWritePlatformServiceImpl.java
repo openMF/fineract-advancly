@@ -186,6 +186,9 @@ public class SavingsAccrualWritePlatformServiceImpl implements SavingsAccrualWri
         List<SavingsAccountTransactionDetailsForPostingPeriod> savingsAccountTransactionDetailsForPostingPeriodList = savingsAccount
                 .toSavingsAccountTransactionDetailsForPostingPeriodList();
         for (final LocalDateInterval periodInterval : postingPeriodIntervals) {
+            if (DateUtils.isDateInTheFuture(periodInterval.endDate())) {
+                continue;
+            }
             final boolean isUserPosting = (postedAsOnTransactionDates.contains(periodInterval.endDate()));
 
             final PostingPeriod postingPeriod = PostingPeriod.createFrom(periodInterval, periodStartingBalance,
