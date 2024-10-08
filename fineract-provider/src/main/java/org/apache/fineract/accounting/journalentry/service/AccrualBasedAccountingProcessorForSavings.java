@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.closure.domain.GLClosure;
 import org.apache.fineract.accounting.common.AccountingConstants.AccrualAccountsForSavings;
 import org.apache.fineract.accounting.common.AccountingConstants.FinancialActivity;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AccrualBasedAccountingProcessorForSavings implements AccountingProcessorForSavings {
 
     private final AccountingProcessorHelper helper;
@@ -180,9 +182,16 @@ public class AccrualBasedAccountingProcessorForSavings implements AccountingProc
             }
 
             else if (savingsTransactionDTO.getTransactionType().isAccrual()) {
-                // Post journal entry for Accrual Recognition
+                log.error("Post journal entry for Accrual Recognition"); 
                 if (savingsTransactionDTO.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                    if (feePayments.size() > 0 || penaltyPayments.size() > 0) {                        
+                    if (feePayments.size() > 0 || penaltyPayments.size() > 0) {
+                        log.error("if (feePayments.size() > 0 || penaltyPayments.size() > 0)" );
+                        this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
+                                AccrualAccountsForSavings.FEES_RECEIVABLE.getValue(), AccrualAccountsForSavings.INCOME_FROM_FEES.getValue(),
+                                savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
+                    } 
+                    else {
+                        log.error("else " );
                         this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
                                 AccrualAccountsForSavings.INTEREST_ON_SAVINGS.getValue(),
                                 AccrualAccountsForSavings.INTEREST_PAYABLE.getValue(), savingsProductId, paymentTypeId, savingsId,
@@ -192,6 +201,7 @@ public class AccrualBasedAccountingProcessorForSavings implements AccountingProc
             }
 
             else if (savingsTransactionDTO.getTransactionType().isWithholdTax()) {
+                log.error("else if (savingsTransactionDTO.getTransactionType().isWithholdTax()) " );
                 this.helper.createAccrualBasedJournalEntriesAndReversalsForSavingsTax(office, currencyCode,
                         AccrualAccountsForSavings.SAVINGS_CONTROL, AccrualAccountsForSavings.SAVINGS_REFERENCE, savingsProductId,
                         paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal,
