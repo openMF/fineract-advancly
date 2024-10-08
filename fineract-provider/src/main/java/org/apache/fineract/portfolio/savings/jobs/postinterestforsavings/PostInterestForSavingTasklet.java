@@ -73,20 +73,20 @@ public class PostInterestForSavingTasklet implements Tasklet {
 
         long start = System.currentTimeMillis();
 
-        log.debug("Reading Savings Account Data!");
+        log.error("Reading Savings Account Data!");
         List<SavingsAccountData> savingsAccounts = savingAccountReadPlatformService
                 .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxSavingsIdInList);
 
         if (savingsAccounts != null && savingsAccounts.size() > 0) {
             savingsAccounts = Collections.synchronizedList(savingsAccounts);
             long finish = System.currentTimeMillis();
-            log.debug("Done fetching Data within {} milliseconds", finish - start);
+            log.error("Done fetching Data within {} milliseconds", finish - start);
             queue.add(savingsAccounts);
 
             if (!CollectionUtils.isEmpty(queue)) {
                 do {
                     int totalFilteredRecords = savingsAccounts.size();
-                    log.debug("Starting Interest posting - total records - {}", totalFilteredRecords);
+                    log.error("Starting Interest posting - total records - {}", totalFilteredRecords);
                     List<SavingsAccountData> queueElement = queue.element();
                     maxSavingsIdInList = queueElement.get(queueElement.size() - 1).getId();
                     postInterest(queue.remove(), threadPoolSize, backdatedTxnsAllowedTill, pageSize, maxSavingsIdInList);
@@ -124,7 +124,7 @@ public class PostInterestForSavingTasklet implements Tasklet {
             }
 
             while (queue.size() <= QUEUE_SIZE) {
-                log.debug("Fetching while threads are running!");
+                log.error("Fetching while threads are running!");
                 List<SavingsAccountData> savingsAccountDataList = Collections.synchronizedList(this.savingAccountReadPlatformService
                         .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxId));
                 if (savingsAccountDataList.isEmpty()) {
