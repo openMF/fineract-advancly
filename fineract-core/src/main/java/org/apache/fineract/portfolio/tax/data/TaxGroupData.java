@@ -65,4 +65,8 @@ public final class TaxGroupData implements Serializable {
         return this.taxAssociations;
     }
 
+    public Long getId() {
+        return id;
+    }
+
 }
