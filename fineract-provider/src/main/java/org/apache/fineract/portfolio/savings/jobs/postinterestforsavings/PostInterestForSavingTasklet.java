@@ -162,20 +162,6 @@ public class PostInterestForSavingTasklet implements Tasklet {
 
         List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
-        Long maxId = maxSavingsIdInList;
-        if (!queue.isEmpty()) {
-            maxId = Math.max(maxSavingsIdInList, queue.element().get(queue.element().size() - 1).getId());
-        }
-
-        while (queue.size() <= QUEUE_SIZE) {
-            savingsAccounts = Collections.synchronizedList(this.savingAccountReadPlatformService
-                    .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxId));
-            if (savingsAccounts.isEmpty()) {
-                break;
-            }
-            maxId = savingsAccounts.get(savingsAccounts.size() - 1).getId();
-            queue.add(savingsAccounts);
-        }
 
         checkCompletion(responses);
     }
