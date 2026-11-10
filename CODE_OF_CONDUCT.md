@@ -1,5 +1,5 @@
-This project follows
-[the Apache Software Foundation (ASF) Code of Conduct](https://www.apache.org/foundation/policies/conduct.html).
 
-Violations of the code of conduct may be reported directly the to ASF or
-the Apache Fineract's Project Management Committee at private@fineract.apache.org.
+# Code of Conduct
+
+- Always follow the Mifos Initiative [code of conduct](https://mifos.org/resources/community/code-of-conduct/) - this is important to us. We are proud to be open, tolerant and providing a positive environment.
+
